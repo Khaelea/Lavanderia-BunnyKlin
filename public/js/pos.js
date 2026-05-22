@@ -2,6 +2,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
     const adaptarCatalogo = (data, category) => {
         return (data || []).map((item) => ({
             id: item.id,
+            clave_prodserv: item.clave_prodserv,
             name: item.name,
             price: parseFloat(item.price),
             category: category,
@@ -10,9 +11,10 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             unit: item.unit || null,
             duration_months: item.duration_months || null,
             clave_prodserv: item.clave_prodserv || null,
+            is_active: item.is_active ? true : false,
+            is_for_orders: item.is_for_orders ? true : false,
         }));
     };
-    
 
     return {
         activeMode: "sale",
@@ -31,6 +33,8 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             stock: 0,
             unit: "",
             duration_months: 1,
+            is_active: true,
+            is_for_orders: false,
         },
 
         clienteForm: { nombre: "", telefono: "", inicio: "", fin: "" },
@@ -64,6 +68,26 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: 0,
                 unit: "",
                 duration_months: 1,
+                is_active: true,
+                is_for_orders: false,
+            };
+        },
+
+        openViewModal(item, category) {
+            this.itemModal = {
+                open: true,
+                mode: "view",
+                category: category,
+                id: item.id,
+                clave_prodserv: item.clave_prodserv || null,
+                name: item.name,
+                price: item.price,
+                description: item.description || null,
+                stock: item.stock || null,
+                unit: item.unit || null,
+                duration_months: item.duration_months || null,
+                is_for_orders: item.is_for_orders ? true : false,
+                is_active: item.is_active ? true : false,
             };
         },
 
@@ -73,12 +97,15 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 mode: "edit",
                 category: category,
                 id: item.id,
+                clave_prodserv: item.clave_prodserv || null,
                 name: item.name,
                 price: item.price,
                 description: item.description || null,
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                is_active: item.is_active ? true : false,
+                is_for_orders: item.is_for_orders ? true : false,
             };
         },
 
@@ -88,12 +115,15 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 mode: "delete",
                 category: category,
                 id: item.id,
+                clave_prodserv: item.clave_prodserv || null,
                 name: item.name,
                 price: item.price,
                 description: item.description || null,
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                is_active: item.is_active ? true : false,
+                is_for_orders: item.is_for_orders ? true : false,
             };
         },
 
@@ -117,6 +147,8 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: this.itemModal.stock,
                 unit: this.itemModal.unit,
                 duration_months: this.itemModal.duration_months,
+                is_active: this.itemModal.is_active,
+                is_for_orders: this.itemModal.is_for_orders ? true : false,
             };
 
             let targetList =
@@ -165,8 +197,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                     const data = await response.json();
 
                     targetList.push({
-                        id: data.item.id,
-                        name: data.item.name,
+                        ...data.item,
                         price: parseFloat(data.item.price),
                         category: this.itemModal.category,
                     });
@@ -197,9 +228,14 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                             data.item.description || null;
                         targetList[idx].stock = data.item.stock || null;
                         targetList[idx].unit = data.item.unit || null;
-
                         targetList[idx].duration_months =
                             data.item.duration_months || null;
+                        targetList[idx].is_active = data.item.is_active
+                            ? true
+                            : false;
+                        targetList[idx].is_for_orders = data.item.is_for_orders
+                            ? true
+                            : false;
 
                         // Actualizamos el item en el carrito
                         let cartIdx = this.cart.findIndex(
@@ -274,6 +310,47 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             } catch (error) {
                 console.error(error);
                 alert("Hubo un problema al intentar eliminar el elemento.");
+            }
+        },
+
+        async toggleServiceStatus(service) {
+            // 1. Invertimos el estado localmente para una respuesta visual instantánea (UX)
+            const nuevoEstado = !service.is_active;
+            service.is_active = nuevoEstado;
+
+            // 2. Preparamos el payload mínimo necesario para el backend
+            const payload = {
+                id: service.id,
+                category: service.category || "services", // Aseguramos que sepa qué tabla actualizar
+                is_active: nuevoEstado,
+            };
+
+            try {
+                // 3. Enviamos la petición al servidor a una nueva ruta específica
+                const response = await fetch("/catalogo/toggle-estado", {
+                    method: "PATCH",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-CSRF-TOKEN": document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute("content"),
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                if (!response.ok) {
+                    throw new Error("Error en el servidor");
+                }
+
+                // (Opcional) Si quieres actualizar el contador de inactivos, Alpine lo hará solo
+                // porque el arreglo 'services' ya mutó en el paso 1.
+            } catch (error) {
+                console.error("Error al cambiar estado:", error);
+
+                // 4. Revertimos el estado visual si la petición falló
+                service.is_active = !nuevoEstado;
+                alert("Hubo un problema de conexión. El estado no se cambió.");
             }
         },
 

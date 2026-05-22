@@ -15,6 +15,8 @@ use App\Models\Subscription;
 use App\Http\Controllers\CatalogoController;
 // Import para Controlador del historial de ventas
 use App\Http\Controllers\SalesController;
+// Import para Controlador de orders
+use App\Http\Controllers\OrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -27,7 +29,10 @@ use App\Http\Controllers\SalesController;
 // =========================================================
 
 Route::get('/', function () {
-    $services = App\Models\Service::query()->where('is_active', true)->get();
+    $services = App\Models\Service::query()
+        ->where('is_active', true)
+        ->where('is_for_orders', false)
+        ->get();
     $supplies = App\Models\Supply::query()->where('is_active', true)->get();
     $subscriptions = App\Models\Subscription::query()->where('is_active', true)->get();
 
@@ -38,6 +43,9 @@ Route::get('/', function () {
             'subscriptions' => $subscriptions
         ]);
 })->name('pos');
+
+// Ruta para cambiar el estado de un elemento del catalogo
+Route::patch('/catalogo/toggle-estado', [App\Http\Controllers\CatalogoController::class, 'toggleEstado'])->name('catalogo.toggle');
 
 // Ruta para guardar cosas del catalogo
 Route::post('/catalogo/guardar', [CatalogoController::class, 'store'])->name('catalogo.store');
@@ -55,6 +63,28 @@ Route::delete('/ventas/bulk', [App\Http\Controllers\SalesController::class, 'des
 // Ruta para borrar una sola venta
 Route::delete('/ventas/{id}', [App\Http\Controllers\SalesController::class, 'destroy'])->name('ventas.destroy');
 
+// Rutas para clientes
+Route::get('/api/clientes/init', [App\Http\Controllers\ClientController::class, 'apiInit']);
+Route::post('/api/clientes', [App\Http\Controllers\ClientController::class, 'store']);
+Route::put('/api/clientes/{client}', [App\Http\Controllers\ClientController::class, 'update']);
+Route::delete('/api/clientes/{client}', [App\Http\Controllers\ClientController::class, 'destroy']);
+
+// Rutas para ordenes/pedidos
+Route::prefix('api/orders')->group(function () {
+    // Carga inicial de datos para la vista (GET)
+    Route::get('/init', [OrderController::class, 'apiInit']);
+
+    // Guardar un nuevo encargo (POST)
+    Route::post('/', [OrderController::class, 'store']);
+
+    // Actualizar un encargo existente (PUT)
+    // El parámetro {order} usa el Model Binding de Laravel
+    Route::put('/{order}', [OrderController::class, 'update']);
+
+    // Eliminar un encargo (DELETE)
+    Route::delete('/{order}', [OrderController::class, 'destroy']);
+});
+
 Route::get('/historial', function () {
     return view('pages.historial', ['title' => 'Historial de Ventas']);
 })->name('historial');
@@ -69,7 +99,8 @@ Route::get('/maquinas', function () {
 // =========================================================
 
 Route::get('/catalogo', function () {
-    return view('pages.catalogo', ['title' => 'Servicios y Productos']);
+    $services = App\Models\Service::query()->latest()->get();
+    return view('pages.catalogo', ['title' => 'Servicios y Productos', 'services' => $services]);
 })->name('catalogo');
 
 

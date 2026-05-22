@@ -16,7 +16,8 @@ class CatalogoService
                 'clave_prodserv' => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                 'price'          => $datos['price'],
                 'description'    => $datos['description'] ?? null,
-                'is_active'      => true
+                'is_active'      => $datos['is_active'] ?? true,
+                'is_for_orders'  => $datos['is_for_orders'] ?? false,
             ]),
 
             'supplies'      => Supply::query()->create([
@@ -25,7 +26,7 @@ class CatalogoService
                 'price'          => $datos['price'],
                 'stock'          => $datos['stock'] ?? 0,
                 'unit'           => $datos['unit'] ?? 'Pza',
-                'is_active'      => true
+                'is_active'      => $datos['is_active'] ?? true,
             ]),
 
             'subscriptions' => Subscription::query()->create([
@@ -34,7 +35,7 @@ class CatalogoService
                 'price'           => $datos['price'],
                 'duration_months' => $datos['duration_months'] ?? 1,
                 'description'     => $datos['description'] ?? null,
-                'is_active'       => true
+                'is_active'       => $datos['is_active'] ?? true,
             ]),
 
             default => throw new \Exception('Categoría no válida'),
@@ -52,6 +53,8 @@ class CatalogoService
                     'clave_prodserv' => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                     'price'          => $datos['price'],
                     'description'    => $datos['description'] ?? null,
+                    'is_active'       => $datos['is_active'] ?? true,
+                    'is_for_orders'  => $datos['is_for_orders'] ?? false,
                 ]);
             }),
 
@@ -62,6 +65,7 @@ class CatalogoService
                     'price'          => $datos['price'],
                     'stock'          => $datos['stock'] ?? 0,
                     'unit'           => $datos['unit'] ?? 'Pza',
+                    'is_active'       => $datos['is_active'] ?? true,
                 ]);
             }),
 
@@ -72,6 +76,7 @@ class CatalogoService
                     'price'           => $datos['price'],
                     'duration_months' => $datos['duration_months'] ?? 1,
                     'description'     => $datos['description'] ?? null,
+                    'is_active'       => $datos['is_active'] ?? true,
                 ]);
             }),
 

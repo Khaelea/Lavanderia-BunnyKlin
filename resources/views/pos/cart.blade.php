@@ -1,5 +1,5 @@
 <div class="bg-white rounded-3xl shadow-xl border-2 border-slate-100 p-6 flex flex-col h-[calc(100vh-8rem)] sticky top-8">
-    
+
     {{-- Encabezado de la Canasta --}}
     <div class="flex items-center justify-between mb-4">
         <h2 class="text-xl font-black text-[#1E55AA]">Canasta</h2>
@@ -8,7 +8,7 @@
 
     {{-- Lista de Productos --}}
     <div class="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-        
+
         <template x-if="cart.length === 0">
             <div class="flex flex-col items-center justify-center h-full text-center opacity-50">
                 <svg class="w-12 h-12 text-[#1E55AA] mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
@@ -21,13 +21,13 @@
                 <div class="flex justify-between items-start">
                     <div class="flex-1 pr-2">
                         <h4 class="text-sm font-black text-[#1E55AA] leading-tight" x-text="item.name"></h4>
-                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase mt-0.5 inline-block" 
+                        <span class="text-[10px] font-extrabold px-1.5 py-0.5 rounded uppercase mt-0.5 inline-block"
                               :class="{
                                   'bg-blue-100 text-blue-600': item.category === 'services',
                                   'bg-emerald-100 text-emerald-600': item.category === 'supplies',
                                   'bg-purple-100 text-purple-600': item.category === 'subscriptions',
                                   'bg-orange-100 text-orange-600': item.category === 'extras'
-                              }" 
+                              }"
                               x-text="item.category === 'services' ? 'Servicio' : (item.category === 'supplies' ? 'Insumo' : (item.category === 'subscriptions' ? 'Suscripción' : 'Extra'))">
                         </span>
                     </div>
@@ -56,17 +56,17 @@
             <span class="text-sm font-bold text-[#1E55AA]/60">Total Venta:</span>
             <span class="text-3xl font-black text-emerald-500 leading-none" x-text="formatMoney(total)"></span>
         </div>
-        
-        <button 
-            @click="checkout()" 
+
+        <button
+            @click="checkout()"
             :disabled="cart.length === 0"
             class="w-full py-3.5 rounded-xl font-black text-white bg-[#1E55AA] shadow-lg shadow-[#1E55AA]/20 hover:bg-[#153e7d] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:shadow-none">
             Cobrar Venta
         </button>
 
-        <button 
-            x-show="cart.length > 0" 
-            @click="clearCart()" 
+        <button
+            x-show="cart.length > 0"
+            @click="clearCart()"
             class="w-full mt-2 py-1.5 text-sm font-bold text-slate-400 hover:text-rose-500 transition-colors">
             Vaciar Canasta
         </button>

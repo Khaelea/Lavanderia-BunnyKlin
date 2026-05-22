@@ -73,4 +73,26 @@ class CatalogoController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+
+    public function toggleEstado(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer',
+            'category' => 'required|string|in:services,supplies,subscriptions,extras',
+            'is_active' => 'required|boolean'
+        ]);
+
+        // Determinamos el modelo correcto según la categoría
+        $modelo = match ($request->category) {
+            'services' => \App\Models\Service::class,
+            'supplies' => \App\Models\Supply::class,
+            'subscriptions' => \App\Models\Subscription::class,
+        };
+
+        // Buscamos el elemento y actualizamos solo esa columna
+        $elemento = $modelo::findOrFail($request->id);
+        $elemento->update(['is_active' => $request->is_active]);
+
+        return response()->json(['success' => true, 'is_active' => $elemento->is_active]);
+    }
 }
