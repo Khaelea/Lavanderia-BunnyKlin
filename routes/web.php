@@ -5,6 +5,7 @@ use App\Http\Controllers\PagoController;
 use App\Http\Controllers\BrickPagoController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\FacturaController;
+use App\Http\Controllers\CajaController;
 use Illuminate\Support\Facades\Http;
 // Imports para ruta principal /
 use App\Models\Service;
@@ -121,9 +122,11 @@ Route::get('/insumos', function () {
     return view('pages.blank', ['title' => 'Inventario de Insumos']);
 })->name('insumos');
 
-Route::get('/caja', function () {
-    return view('pages.blank', ['title' => 'Corte de Caja']);
-})->name('caja');
+/*Route::get('/caja', function () {
+    return view('pages.caja', ['title' => 'Corte de Caja']);
+})->name('caja');*/
+
+Route::get('/caja', [CajaController::class, 'corte'])->name('caja');
 
 Route::get('/newcalendar', [CalendarController::class, 'index'])->name('calendar.index');
 
