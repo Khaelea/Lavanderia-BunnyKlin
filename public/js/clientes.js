@@ -277,5 +277,28 @@ document.addEventListener("alpine:init", () => {
                 day: "numeric",
             });
         },
+
+        isExpired(dateString) {
+            if (!dateString) return false;
+
+            // 1. Creamos la fecha a partir del string que manda Laravel
+            const date = new Date(dateString);
+
+            // 2. Aplicamos la misma corrección de zona horaria que usaste en formatDate
+            const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+            const endDate = new Date(date.getTime() + userTimezoneOffset);
+
+            // 3. Obtenemos el día de hoy
+            const today = new Date();
+
+            // 4. "Limpiamos" las horas, minutos y segundos a 0 en ambas fechas.
+            // Esto asegura que si el plan vence hoy, no se marque como vencido
+            // hasta que realmente sea mañana.
+            endDate.setHours(0, 0, 0, 0);
+            today.setHours(0, 0, 0, 0);
+
+            // Retorna true si la fecha de expiración es anterior al día de hoy
+            return endDate < today;
+        },
     }));
 });
