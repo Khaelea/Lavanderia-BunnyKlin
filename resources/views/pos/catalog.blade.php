@@ -38,11 +38,26 @@
     </div>
     <div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
         <template x-for="item in supplies" :key="item.id">
-            <button @click="handleItemClick(item, 'supplies')" class="relative flex flex-col p-5 rounded-2xl bg-white transition-all text-left border-2 shadow-sm active:scale-95" :class="{ 'border-[#FFE63C] border-dashed bg-[#FFE63C]/10 hover:bg-[#FFE63C]/20': activeMode === 'edit', 'border-rose-400 border-dashed bg-rose-50 hover:bg-rose-100': activeMode === 'delete', 'border-[#FFE63C]/30 hover:border-[#FFE63C] hover:bg-[#FFE63C]/10': activeMode === 'sale' }">
-                <span class="font-black text-[#1E55AA] text-lg z-10 leading-tight mb-1" x-text="item.name"></span>
+
+            {{-- Botón de Insumo --}}
+            <button @click="handleItemClick(item, 'supplies')"
+                :disabled="activeMode === 'sale' && item.stock <= 0"
+                class="relative flex flex-col p-5 rounded-2xl transition-all text-left border-2 shadow-sm"
+                class="relative flex flex-col p-5 rounded-2xl bg-white transition-all text-left border-2 shadow-sm active:scale-95" :class="{ 'border-[#FFE63C] border-dashed bg-[#FFE63C]/10 hover:bg-[#FFE63C]/20': activeMode === 'edit', 'border-rose-400 border-dashed bg-rose-50 hover:bg-rose-100': activeMode === 'delete', 'border-[#1E55AA]/10 hover:border-[#1E55AA] hover:bg-[#1E55AA]/5': activeMode === 'sale' }">
+
+                {{-- NUEVO: Etiqueta indicadora de Stock --}}
+                <div class="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider"
+                     :class="item.stock > 5 ? 'bg-emerald-100 text-emerald-600' : (item.stock > 0 ? 'bg-amber-100 text-amber-600' : 'bg-rose-100 text-rose-600')">
+                    <span x-text="item.stock > 0 ? item.stock + ' en stock' : 'Agotado'"></span>
+                </div>
+
+                {{-- Textos del botón (con un margen superior para no chocar con el badge) --}}
+                <span class="font-black text-[#1E55AA] text-lg z-10 leading-tight mb-1 mt-3" x-text="item.name"></span>
                 <span class="text-xl font-extrabold text-[#1E55AA]/70 z-10" x-text="formatMoney(item.price)"></span>
             </button>
+
         </template>
+
         <button x-show="activeMode === 'edit'" @click="openAddModal('supplies')" class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-[#FFE63C] text-[#1E55AA] bg-white hover:bg-[#FFE63C]/10 transition-colors active:scale-95">
             <div class="p-2 bg-[#FFE63C]/20 rounded-full mb-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg></div>
             <span class="font-bold text-sm">Añadir Insumo</span>

@@ -42,31 +42,54 @@ document.addEventListener("alpine:init", () => {
                 // Hacemos la petición al controlador de Laravel
                 const response = await fetch("/ventas/api-historial");
 
-                if (response.ok) {
-                    const data = await response.json();
-                    // Mapeamos los datos de la base de datos para que tu vista los entienda
-                    this.ventas = data.map((venta) => ({
-                        id: venta.id,
-                        folio: venta.reference, // Tu columna de BD
-                        fecha: new Date(venta.created_at).toLocaleString(
-                            "es-MX",
-                            { timeZone: "America/Mexico_City" },
-                        ),
-                        total: venta.total,
-                        items: venta.items,
-                    }));
-                } else {
-                    // Fallback a localStorage si el endpoint falla mientras desarrollas
-                    this.ventas =
-                        JSON.parse(localStorage.getItem("historial_ventas")) ||
-                        [];
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const dataCruda = await response.json();
+
+                // Mapeamos los datos reales de la base de datos a la estructura que espera Alpine
+                this.ventas = dataCruda.data.map((venta) => {
+                    // Formateamos la fecha a DD/MM/YYYY, HH:MM
+                    const fechaObj = new Date(venta.created_at);
+                    const dia = String(fechaObj.getDate()).padStart(2, "0");
+                    const mes = String(fechaObj.getMonth() + 1).padStart(
+                        2,
+                        "0",
+                    );
+                    const anio = fechaObj.getFullYear();
+                    const hora = String(fechaObj.getHours()).padStart(2, "0");
+                    const minutos = String(fechaObj.getMinutes()).padStart(
+                        2,
+                        "0",
+                    );
+                    const fechaFormateada = `${dia}/${mes}/${anio}, ${hora}:${minutos}`;
+
+                    return {
+                        id: venta.id,
+                        folio: venta.reference,
+                        fecha: fechaFormateada,
+                        total: parseFloat(venta.total),
+                        // Nos aseguramos de que items sea siempre un arreglo
+                        items: venta.items || [],
+                    };
+                });
+
+                // Si todo sale bien, eliminamos la basura vieja del localStorage para evitar confusiones futuras
+                localStorage.removeItem("historial_ventas");
             } catch (error) {
-                console.error("Error cargando el historial:", error);
-                this.ventas =
-                    JSON.parse(localStorage.getItem("historial_ventas")) || [];
+                console.error(
+                    "🚨 Error cargando el historial desde la base de datos:",
+                    error,
+                );
+                // Si la base de datos falla, vaciamos la tabla en vez de mostrar datos falsos.
+                this.ventas = [];
+                alert(
+                    "No se pudo conectar con la base de datos para cargar el historial.",
+                );
             }
 
+            // Estas funciones reconstruyen los filtros y la vista con los datos nuevos
             this.extraerFechas();
             this.filtrarVentas();
         },
