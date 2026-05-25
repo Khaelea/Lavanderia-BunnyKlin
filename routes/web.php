@@ -30,18 +30,18 @@ use App\Http\Controllers\OrderController;
 
 Route::get('/', function () {
     $services = App\Models\Service::query()
-        ->where('is_active', true)
+        ->where('is_active', true) 
         ->where('is_for_orders', false)
         ->get();
     $supplies = App\Models\Supply::query()->where('is_active', true)->get();
     $subscriptions = App\Models\Subscription::query()->where('is_active', true)->get();
 
     return view('pages.pos', [
-            'title'         => 'Punto de Venta',
-            'services'     => $services,
-            'supplies'       => $supplies,
-            'subscriptions' => $subscriptions
-        ]);
+        'title'         => 'Punto de Venta',
+        'services'     => $services,
+        'supplies'       => $supplies,
+        'subscriptions' => $subscriptions
+    ]);
 })->name('pos');
 
 // Ruta para cambiar el estado de un elemento del catalogo
@@ -129,6 +129,7 @@ Route::get('/clientes', function () {
 
 Route::get('/caja', [CajaController::class, 'corte'])->name('caja');
 
+Route::post('/caja/movimiento', [CajaController::class, 'movimiento'])->name('caja.movimiento');
 
 Route::get('/newcalendar', [CalendarController::class, 'index'])->name('calendar.index');
 

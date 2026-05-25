@@ -10,8 +10,8 @@ class CajaController extends Controller
 {
     public function corte()
     {
-        // 1. Rango de tiempo del turno (Desde las 8:00 AM de hoy hasta ahora)
-        $inicioTurno = Carbon::Today();
+        // 1. Rango de tiempo del turno (Desde las 00:00 AM de hoy hasta ahora)
+        $inicioTurno = Carbon::today();
         $finTurno = Carbon::now();
 
         // 2. Consulta limpia usando name_snapshot de sale_items
@@ -19,8 +19,8 @@ class CajaController extends Controller
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->whereBetween('sales.created_at', [$inicioTurno, $finTurno])
             ->select(
-                'sale_items.name_snapshot as servicio', // <-- Tu columna real de nombres
-                DB::raw('SUM(sale_items.quantity) as cantidad'),
+                'sale_items.name_snapshot as servicio',
+                DB::raw('SUM(sale_items.quantity) as quantity'),
                 DB::raw('SUM(sale_items.subtotal) as total_recaudado')
             )
             ->groupBy('sale_items.name_snapshot')
@@ -29,19 +29,18 @@ class CajaController extends Controller
         // 3. Sumamos el total bruto de la recaudación del turno
         $totalBruto = $desgloseServicios->sum('total_recaudado');
 
-        // 3. --- LÓGICA LOCAL PARA "CAJA - EFECTIVO" ---
-        
-        $fondoInicial = 500.00; // Tu fondo fijo de la imagen
+        $fondoInicial = 500.00; // Fondo fijo
 
-        // Calculamos los ingresos REALES de la base de datos, pero SOLO si se pagaron en "Efectivo"
+        // Calculamos los ingresos REALES de la base de datos en Efectivo
         $ingresosEfectivo = DB::table('sales')
             ->whereBetween('created_at', [$inicioTurno, $finTurno])
             ->where('payment_method', 'Efectivo')
             ->sum('total');
 
-        // Simulamos valores locales para Gastos y Retiros (Puedes cambiar estos números para probar)
-        $retirosAutorizados = 0.00; 
-        $gastosOperativos = 0.00;
+        // --- SISTEMA LOCAL CON SESIÓN PARA PRUEBAS ---
+        // Leemos los acumulados guardados localmente en la sesión (si no existen, inician en 0.00)
+        $retirosAutorizados = session('local_retiros', 0.00); 
+        $gastosOperativos = session('local_gastos', 0.00);
 
         // Aplicamos la fórmula matemática
         $efectivoFinal = $fondoInicial + $ingresosEfectivo - $retirosAutorizados - $gastosOperativos;
@@ -57,4 +56,39 @@ class CajaController extends Controller
             'efectivoFinal'
         ));
     }
+
+    /**
+     * Procesa los gastos y retiros de forma local usando la sesión de PHP
+     */
+    public function movimiento(Request $request)
+    {
+        // 1. Validamos que los datos requeridos lleguen bien desde el formulario
+        $request->validate([
+            'tipo' => 'required|in:gasto,retiro',
+            'monto' => 'required|numeric|min:0.01',
+            'concepto_o_responsable' => 'required|string|max:255'
+        ]);
+
+        $tipo = $request->input('tipo');
+        $monto = (float) $request->input('monto');
+
+        // 2. Guardamos el acumulador de manera local en la sesión del servidor
+        if ($tipo === 'gasto') {
+            $actual = session('local_gastos', 0.00);
+            session(['local_gastos' => $actual + $monto]);
+        } else {
+            $actual = session('local_retiros', 0.00);
+            session(['local_retiros' => $actual + $monto]);
+        }
+
+        // 3. Respondemos con éxito al JavaScript para que actualice la interfaz sin recargar
+        return response()->json([
+            'success' => true,
+            'message' => 'Movimiento registrado localmente',
+            'monto' => $monto,
+            'tipo' => $tipo
+        ]);
+    }
+
+    
 }
