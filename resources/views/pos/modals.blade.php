@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 {{-- Modal de Edición/Creación/Vista de Productos del POS --}}
 <div x-cloak x-show="itemModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+=======
+{{-- Modal de Edición/Creación de Productos del POS --}}
+<div x-show="itemModal.open" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-slate-100 w-full max-w-md overflow-hidden animate-fade-in" @click.stop>
 
         {{-- Encabezado dinámico --}}
@@ -27,11 +32,19 @@
                         <input type="text" x-model="itemModal.name" required :disabled="itemModal.mode === 'view'"
                             class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
                     </div>
+<<<<<<< HEAD
 
                     <div>
                         <label class="block text-sm font-black text-[#1E55AA] mb-1">Clave SAT</label>
                         <input type="text" x-model="itemModal.clave_prodserv" placeholder="80101500" maxlength="8" :disabled="itemModal.mode === 'view'"
                             class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
+=======
+                    
+                    {{-- NUEVO: Campo Clave SAT (Agregado de tu compañero) --}}
+                    <div>
+                        <label class="block text-sm font-black text-[#1E55AA] mb-1">Clave SAT</label>
+                        <input type="text" x-model="itemModal.clave_prodserv" placeholder="80101500" maxlength="8" class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] transition-all">
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                     </div>
 
                     <div>
@@ -41,7 +54,7 @@
                     </div>
 
                     {{-- Campo: Descripción (Solo Servicios y Suscripciones) --}}
-                    <div x-show="itemModal.category === 'services' || itemModal.category === 'subscriptions'" x-collapse>
+                    <div x-show="itemModal.category === 'services' || itemModal.category === 'subscriptions'" x-transition>
                         <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Descripción</label>
                         <textarea x-model="itemModal.description" rows="2" placeholder="Detalles adicionales..." :disabled="itemModal.mode === 'view'"
                             class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors"></textarea>
@@ -58,24 +71,41 @@
                     </div>
 
                     {{-- Campos: Stock y Unidad (Solo Insumos) --}}
-                    <div x-show="itemModal.category === 'supplies'" class="grid grid-cols-2 gap-4" x-collapse>
+                    <div x-show="itemModal.category === 'supplies'" class="grid grid-cols-2 gap-4" x-transition>
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Stock</label>
                             <input type="number" x-model="itemModal.stock" placeholder="0" :disabled="itemModal.mode === 'view'"
                                 class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors">
                         </div>
+                        {{-- NUEVO: Select de Unidad de Medida (Agregado de tu compañero) --}}
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Unidad de Medida</label>
+<<<<<<< HEAD
                             <select x-model="itemModal.unit" :disabled="itemModal.mode === 'view'"
                                 class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors appearance-none cursor-pointer">
+=======
+                            <select x-model="itemModal.unit" class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white transition-colors">
+                                <!-- Las más comunes -->
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                                 <option value="H87" selected>H87 - Pieza</option>
                                 <option value="E48">E48 - Unidad de servicio</option>
                                 <option value="ACT">ACT - Actividad</option>
                                 <option value="C62">C62 - Uno (Sin unidad específica)</option>
+<<<<<<< HEAD
                                 <option value="KGM">KGM - Kilogramo</option>
                                 <option value="GRM">GRM - Gramo</option>
                                 <option value="LTR">LTR - Litro</option>
                                 <option value="MLT">MLT - Mililitro</option>
+=======
+                                
+                                <!-- Peso y Volumen -->
+                                <option value="KGM">KGM - Kilogramo</option>
+                                <option value="GRM">GRM - Gramo</option>
+                                <option value="LTR">LTR - Litro</option>
+                                <option value="MLT">MLT - Mililitro</option>                          
+                                
+                                <!-- Otras comunes -->
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                                 <option value="SET">SET - Conjunto / Juego</option>
                                 <option value="XKI">XKI - Kit (Conjunto de Piezas)</option>
                                 <option value="DPC">DPC - Docena de Piezas</option>
@@ -86,7 +116,7 @@
                     </div>
 
                     {{-- Campo: Duración (Solo Suscripciones) --}}
-                    <div x-show="itemModal.category === 'subscriptions'" x-collapse>
+                    <div x-show="itemModal.category === 'subscriptions'" x-transition>
                         <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Duración (Meses)</label>
                         <input type="number" x-model="itemModal.duration_months" placeholder="1" :disabled="itemModal.mode === 'view'"
                             class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors">
@@ -117,18 +147,19 @@
     </div>
 </div>
 
-{{-- Modal Pre-Confirmación (Checkout con Fechas) --}}
-<div x-cloak x-show="showPreConfirmacion" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+{{-- Modal Pre-Confirmación (Checkout con Selección de Método) --}}
+<div x-show="showPreConfirmacion" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-slate-100 w-full max-w-lg overflow-hidden animate-fade-in" @click.stop>
 
         <div class="p-6 border-b border-slate-100 bg-[#F4F8FC]">
             <h3 class="text-2xl font-black text-[#1E55AA]">Completar Venta</h3>
+            <p class="text-[#1E55AA]/60 font-bold mt-1">Registra al cliente y selecciona el método de pago</p>
             <p x-show="cart.some(item => item.category === 'subscriptions')" class="text-[#1E55AA]/60 font-bold mt-1">Registra al cliente y su vigencia (Opcional)</p>
         </div>
 
         <div class="p-6 space-y-4">
-
-            <div x-show="cart.some(item => item.category === 'subscriptions')" x-collapse class="grid grid-cols-2 gap-4">
+            
+            <div x-show="cart.some(item => item.category === 'subscriptions')" x-transition class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-black text-[#1E55AA] mb-1">Nombre del Cliente</label>
                     <input type="text" x-model="clienteForm.nombre" placeholder="Público en General" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2.5 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
@@ -139,7 +170,7 @@
                 </div>
             </div>
 
-            <div x-show="cart.some(item => item.category === 'subscriptions')" x-collapse class="grid grid-cols-2 gap-4 bg-[#F4F8FC] p-4 rounded-xl border border-[#1E55AA]/10 mt-2">
+            <div x-show="cart.some(item => item.category === 'subscriptions')" x-transition class="grid grid-cols-2 gap-4 bg-[#F4F8FC] p-4 rounded-xl border border-[#1E55AA]/10 mt-2">
                 <div>
                     <label class="block text-sm font-black text-[#1E55AA] mb-1">Inicio de Plan</label>
                     <input type="date" x-model="clienteForm.inicio" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
@@ -156,19 +187,64 @@
             </div>
         </div>
 
-        <div class="p-6 bg-slate-50 border-t border-slate-100 flex gap-3">
-            <button @click="cancelarCheckout()" class="flex-1 py-3.5 rounded-xl font-black text-[#1E55AA]/60 bg-white border-2 border-slate-200 hover:bg-slate-100 transition-all">
-                Cancelar
-            </button>
-            <button @click="confirmarCheckout()" class="flex-1 py-3.5 rounded-xl font-black text-white bg-[#1E55AA] shadow-lg shadow-[#1E55AA]/20 hover:bg-[#153e7d] hover:-translate-y-0.5 transition-all">
-                Confirmar Pago
+        <div class="p-6 bg-slate-50 border-t border-slate-100 flex flex-col gap-3">
+            <div class="flex gap-3">
+                <button @click="confirmarCheckout('Efectivo')" class="flex-1 py-3.5 rounded-xl font-black text-[#1E55AA] bg-[#FFE63C] shadow-lg shadow-[#FFE63C]/20 hover:bg-[#f5dd38] hover:-translate-y-0.5 transition-all">
+                    Efectivo
+                </button>
+                <button @click="confirmarCheckout('Terminal')" class="flex-1 py-3.5 rounded-xl font-black text-white bg-[#1E55AA] shadow-lg shadow-[#1E55AA]/20 hover:bg-[#153e7d] hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+                    Terminal MP
+                </button>
+            </div>
+            <button @click="cancelarCheckout()" class="w-full py-2.5 rounded-xl font-bold text-slate-400 hover:text-slate-600 transition-colors">
+                Cancelar Venta
             </button>
         </div>
     </div>
 </div>
 
+{{-- Modal de Carga (Esperando Terminal) --}}
+<div x-show="esperandoTerminal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm p-4 transition-opacity">
+    <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 relative" @click.stop>
+        
+        <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-blue-50 mb-6 relative">
+            <div class="absolute inset-0 rounded-full border-4 border-blue-200 animate-ping opacity-50"></div>
+            <svg class="h-12 w-12 text-blue-600 animate-pulse relative z-10" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" />
+            </svg>
+        </div>
+
+        <h3 class="text-2xl font-black text-[#1E55AA] mb-3">Procesando Pago...</h3>
+        <p class="text-gray-500 font-bold leading-relaxed mb-8">Por favor, siga las instrucciones en la terminal Mercado Pago.</p>
+        
+        <div class="flex justify-center items-center space-x-3">
+            <div class="h-3.5 w-3.5 rounded-full bg-yellow-400 animate-bounce"></div>
+            <div class="h-3.5 w-3.5 rounded-full bg-blue-500 animate-bounce" style="animation-delay: 0.15s"></div>
+            <div class="h-3.5 w-3.5 rounded-full bg-green-500 animate-bounce" style="animation-delay: 0.3s"></div>
+        </div>
+    </div>
+</div>
+
+{{-- Modal de Error de Pago --}}
+<div x-show="showErrorModal" style="display: none;" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+    <div class="bg-white rounded-3xl shadow-2xl border-2 border-rose-100 w-full max-w-sm overflow-hidden text-center p-8 animate-fade-in" @click.stop>
+        
+        <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-rose-100">
+            <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </div>
+        
+        <h3 class="text-2xl font-black text-[#1E55AA] mb-3">Pago No Realizado</h3>
+        <p class="text-slate-500 font-bold mb-8 leading-relaxed" x-text="errorPago"></p>
+        
+        <button @click="cerrarErrorModal()" class="w-full py-4 rounded-xl font-black text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all active:scale-95">
+            Entendido, regresar
+        </button>
+    </div>
+</div>
+
 {{-- Modal Éxito --}}
-<div x-cloak x-show="showConfirmacion" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+<div x-show="showConfirmacion" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-slate-100 w-full max-w-sm overflow-hidden text-center p-8 animate-fade-in" @click.stop>
         <div class="w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>

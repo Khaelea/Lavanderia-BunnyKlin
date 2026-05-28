@@ -17,7 +17,11 @@ class CatalogoController extends Controller
             'category' => 'required|string',
             'name'   => 'required|string|max:100',
             'price'   => 'required|numeric|min:0',
+<<<<<<< HEAD
             'clave_prodserv' => 'nullable|string|max:8', // ValidaciÃ³n para clave SAT
+=======
+            'clave_prodserv' => 'nullable|string|max:8', // Validaci¨®n para clave SAT
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
         ]);
 
         try {
@@ -40,7 +44,11 @@ class CatalogoController extends Controller
             'category' => 'required|string',
             'name'     => 'required|string|max:100',
             'price'    => 'required|numeric|min:0',
+<<<<<<< HEAD
             'clave_prodserv' => 'nullable|string|max:8', // ValidaciÃ³n para clave SAT
+=======
+            'clave_prodserv' => 'nullable|string|max:8', // Validaci¨®n para clave SAT
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
         ]);
 
         try {
@@ -64,7 +72,7 @@ class CatalogoController extends Controller
         ]);
 
         try {
-            // Llamamos al servicio pasando la categorÃ­a y el ID
+            // Llamamos al servicio pasando la categor¨ªa y el ID
             $this->catalogoService->eliminarElemento($request->category, $request->id);
 
             return response()->json(['success' => true]);
@@ -73,6 +81,7 @@ class CatalogoController extends Controller
             return response()->json(['success' => false, 'error' => $e->getMessage()], 500);
         }
     }
+<<<<<<< HEAD
 
     public function toggleEstado(Request $request)
     {
@@ -96,3 +105,6 @@ class CatalogoController extends Controller
         return response()->json(['success' => true, 'is_active' => $elemento->is_active]);
     }
 }
+=======
+}
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece

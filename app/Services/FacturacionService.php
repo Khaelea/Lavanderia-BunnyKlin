@@ -16,6 +16,7 @@ class FacturacionService
 
     public function crearFactura(array $cliente, array $items, $formaPago, string $metodoPago)
     {
+<<<<<<< HEAD
         $usoCFDI = $cliente['use'] ?? 'S01'; 
         unset($cliente['use']);
 
@@ -29,6 +30,25 @@ class FacturacionService
                 "payment_method" => $metodoPago,
                 "use"            => $usoCFDI,
                 "type"           => "I",
+=======
+        // 1. Extraer y limpiar el Uso de CFDI
+        $usoCFDI = $cliente['use'] ?? 'S01'; 
+        unset($cliente['use']);
+
+        // 2. FORMATEO CRÍTICO: Forzamos que la forma de pago sea texto de 2 dígitos
+        // Si llega "1", se convierte en "01". Si llega 3, se convierte en "03".
+        $formaPagoLimpia = sprintf("%02d", (int)$formaPago);
+
+        try {
+            return $this->facturapi->Invoices->create([
+                "customer" => $cliente,
+                "items" => $items,
+                "payment_form" => $formaPagoLimpia, // Aseguramos que tenga 2 dígitos
+                "payment_method" => $metodoPago,
+                "use" => $usoCFDI, // Uso de CFDI
+                "type" => "I", // I = Ingreso, E = Egreso, N = Nómina
+                //"dispatch" => true // Esto la envía por correo automáticamente
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
             ]);
 
             // Verificamos que realmente devolvió algo con ID

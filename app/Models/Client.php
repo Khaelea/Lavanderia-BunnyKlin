@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+<<<<<<< HEAD
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -59,4 +60,10 @@ class Client extends Model
     {
         return $this->hasMany(Order::class);
     }
+=======
+
+class Client extends Model
+{
+    //
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
 }

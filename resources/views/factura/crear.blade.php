@@ -270,6 +270,7 @@
             ventas: [],
             ventaSeleccionada: null,
             cargando: true,
+<<<<<<< HEAD
             currentPage: 1,
             lastPage: 1,
 
@@ -309,6 +310,32 @@
                 this.ventaSeleccionada = {
                     ...venta,
                     detalles: venta.items || venta.detalles
+=======
+
+            async init() {
+                try {
+                    // Llamamos a la ruta que ya tienes definida
+                    const response = await fetch('/ventas/api-historial');
+                    if (!response.ok) throw new Error('Error al obtener datos');
+                    
+                    this.ventas = await response.json();
+                } catch (error) {
+                    console.error("Error cargando el historial:", error);
+                    // Opcional: Fallback al localStorage si falla la red
+                    this.ventas = JSON.parse(localStorage.getItem('historial_ventas')) || [];
+                } finally {
+                    this.cargando = false;
+                }
+            },
+
+            seleccionarVenta(venta) {
+                // Mapeamos los datos para que el controlador de factura los entienda
+                // Si en tu base de datos la relación se llama 'items', 
+                // la convertimos a 'detalles' para que tu FacturaController no falle.
+                this.ventaSeleccionada = {
+                    ...venta,
+                    detalles: venta.items || venta.detalles // Asegura compatibilidad
+>>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                 };
             },
 
