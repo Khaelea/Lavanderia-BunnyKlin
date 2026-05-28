@@ -98,11 +98,15 @@ Route::get('/maquinas', function () {
 // 2. SECCIÓN CATÁLOGOS
 // =========================================================
 
-Route::get('/catalogo', function () {
+Route::get('/servicios', function () {
     $services = App\Models\Service::query()->latest()->get();
-    return view('pages.catalogo', ['title' => 'Servicios y Productos', 'services' => $services]);
-})->name('catalogo');
+    return view('pages.servicios', ['title' => 'Servicios y Productos', 'services' => $services]);
+})->name('servicios');
 
+Route::get('/insumos', function () {
+    $supplies = App\Models\Supply::query()->latest()->get();
+    return view('pages.insumos', ['title' => 'Inventario de Insumos', 'supplies' => $supplies]);
+})->name('insumos');
 
 // =========================================================
 // 3. SECCIÓN OPERACIÓN
@@ -118,9 +122,6 @@ Route::get('/clientes', function () {
     return view('pages.clientes', ['title' => 'Clientes y Suscripciones']);
 })->name('clientes');
 
-Route::get('/insumos', function () {
-    return view('pages.blank', ['title' => 'Inventario de Insumos']);
-})->name('insumos');
 
 /*Route::get('/caja', function () {
     return view('pages.caja', ['title' => 'Corte de Caja']);

@@ -34,8 +34,13 @@ class MenuHelper
                 'items' => [
                     [
                         'name' => 'Servicios y Productos',
-                        'icon' => 'ui-elements', 
-                        'path' => '/catalogo',
+                        'icon' => 'ui-elements',
+                        'path' => '/servicios',
+                    ],
+                    [
+                        'name' => 'Inventario (Insumos)',
+                        'icon' => 'task',
+                        'path' => '/insumos',
                     ],
                 ],
             ],
@@ -53,11 +58,7 @@ class MenuHelper
                         'icon' => 'user-profile',
                         'path' => '/clientes',
                     ],
-                    [
-                        'name' => 'Inventario (Insumos)',
-                        'icon' => 'task',
-                        'path' => '/insumos',
-                    ],
+
                     [
                         'name' => 'Corte de Caja',
                         'icon' => 'charts',
