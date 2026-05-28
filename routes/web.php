@@ -90,7 +90,7 @@ Route::get('/historial', function () {
 })->name('historial');
 
 Route::get('/maquinas', function () {
-    return view('pages.blank', ['title' => 'Máquinas IoT']);
+    return view('pages.maquinas', ['title' => 'Máquinas IoT']);
 })->name('maquinas');
 
 
@@ -127,9 +127,11 @@ Route::get('/clientes', function () {
     return view('pages.caja', ['title' => 'Corte de Caja']);
 })->name('caja');*/
 
+//Rutas para corte de caja
 Route::get('/caja', [CajaController::class, 'corte'])->name('caja');
-
 Route::post('/caja/movimiento', [CajaController::class, 'movimiento'])->name('caja.movimiento');
+Route::post('/caja/generar-corte', [CajaController::class, 'generarCorte'])->name('caja.generarCorte');
+Route::post('/caja/factura-global', [CajaController::class, 'facturaGlobal'])->name('caja.facturaGlobal');
 
 Route::get('/newcalendar', [CalendarController::class, 'index'])->name('calendar.index');
 

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class CajaController extends Controller
 {
@@ -90,5 +91,139 @@ class CajaController extends Controller
         ]);
     }
 
-    
+    public function generarCorte(Request $request)
+    {
+        $inicioTurno = Carbon::today();
+        $finTurno    = Carbon::now();
+
+        // Los mismos datos que ya usas en corte()
+        $desgloseServicios = DB::table('sale_items')
+            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->whereBetween('sales.created_at', [$inicioTurno, $finTurno])
+            ->select(
+                'sale_items.name_snapshot as servicio',
+                DB::raw('SUM(sale_items.quantity) as quantity'),
+                DB::raw('SUM(sale_items.subtotal) as total_recaudado')
+            )
+            ->groupBy('sale_items.name_snapshot')
+            ->get();
+
+        $totalBruto        = $desgloseServicios->sum('total_recaudado');
+        $fondoInicial      = 500.00;
+        $ingresosEfectivo  = DB::table('sales')
+                                ->whereBetween('created_at', [$inicioTurno, $finTurno])
+                                ->where('payment_method', 'Efectivo')
+                                ->sum('total');
+        $retirosAutorizados = session('local_retiros', 0.00);
+        $gastosOperativos   = session('local_gastos', 0.00);
+        $efectivoFinal      = $fondoInicial + $ingresosEfectivo - $retirosAutorizados - $gastosOperativos;
+
+        // Efectivo contado viene del formulario de arqueo
+        $efectivoContado = (float) $request->input('efectivo_real', 0);
+
+        // Logo en base64
+        $logopath = public_path('images/logo/bklogo.png');
+        $logoBase64 = '';
+        if (file_exists($logopath)) {
+            $logoBase64 = 'data:image/png;base64,' . base64_encode(file_get_contents($logopath));
+        }
+
+        //Variables para fecha y hora
+        $fechaCorte = now()->format('d/m/Y');
+        $horaCorte = now()->format('H:i:s');
+
+        $negocio = [
+            'nombre' => 'Lavandería BunnyKlin',
+            'direccion' => 'Calle 5 de Mayo, Col. Centro',
+            'ciudad' => 'San Juan del Río, Qro.',
+            'telefono' => '427 123 4567',
+        ];
+
+        $pdf = Pdf::loadView('caja.corte_caja', compact(
+            'desgloseServicios',
+            'totalBruto',
+            'fondoInicial',
+            'ingresosEfectivo',
+            'retirosAutorizados',
+            'gastosOperativos',
+            'efectivoFinal',
+            'efectivoContado',
+            'fechaCorte',
+            'horaCorte',
+            'logoBase64',
+            'negocio'
+        ))->setPaper('a4', 'portrait');
+
+        // Nombre del archivo con fecha y hora
+        $nombreArchivo = 'corte_caja_' . now()->format('Y-m-d_H-i') . '.pdf';
+
+        return $pdf->download($nombreArchivo);
+    }
+
+    public function facturaGlobal(Request $request)
+    {
+        $request->validate([
+            //'payment_form' => 'required|string',
+            'periodicidad' => 'required|string'
+        ]);
+
+        $inicioTurno = Carbon::today();
+        $finTurno    = Carbon::now();
+
+        // Traemos las ventas completas del turno (no sus items)
+        $ventas = DB::table('sales')
+            ->whereBetween('created_at', [$inicioTurno, $finTurno])
+            ->select('reference', 'total')
+            ->get();
+
+        if ($ventas->isEmpty()) {
+            return response()->json(['message' => 'No hay ventas en este turno para facturar.'], 422);
+        }
+
+        // Construimos un item por cada venta usando su reference como concepto
+        $items = $ventas->map(function ($venta) {
+            return [
+                'quantity' => 1,
+                'product'  => [
+                    'description'  => 'Venta ' . $venta->reference,
+                    'product_key'  => '01010101',
+                    'unit_key'     => 'ACT',
+                    'price'        => (float) $venta->total,
+                    'tax_included' => true
+                ]
+            ];
+        })->values()->toArray();
+
+        $cliente = [
+            'legal_name' => 'PUBLICO EN GENERAL',
+            'tax_id'     => 'XAXX010101000',
+            'tax_system' => '616',
+            'use'        => 'S01',
+            'address'    => ['zip' => '76800']
+        ];
+
+        try {
+            $facturacionService = app(\App\Services\FacturacionService::class);
+
+            $factura = $facturacionService->crearFactura(
+                $cliente,
+                $items,
+                // $request->payment_form,
+                '99',
+                'PPD'
+            );
+
+            $apiKey   = config('services.facturapi.key');
+            $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
+                ->get("https://www.facturapi.io/v2/invoices/{$factura->id}/pdf");
+
+            return response($response->body(), 200, [
+                'Content-Type'        => 'application/pdf',
+                'Content-Disposition' => 'attachment; filename="factura_global_' . now()->format('Y-m-d') . '.pdf"',
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
 }
