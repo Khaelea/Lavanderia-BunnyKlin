@@ -1,5 +1,5 @@
 {{-- Modal de Edición/Creación/Vista de Productos del POS --}}
-<div x-cloak x-show="itemModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+<div x-cloak x-show="itemModal.open" class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-slate-100 w-full max-w-md overflow-hidden animate-fade-in" @click.stop>
 
         {{-- Encabezado dinámico --}}
@@ -13,11 +13,14 @@
             <template x-if="itemModal.mode !== 'delete'">
                 <form @submit.prevent="saveItem" class="space-y-4">
 
-                    {{-- NUEVO: Campo: Estado (Activo/Inactivo) --}}
-                    <div class="flex items-center gap-3 bg-emerald-50/50 p-4 rounded-2xl border-2 border-emerald-100/50 transition-colors hover:border-emerald-200">
+                    {{-- Campo: Estado (Activo/Inactivo) --}}
+                    <div class="flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors"
+                         :class="itemModal.mode === 'view' ? 'bg-slate-50 border-slate-100' : 'bg-emerald-50/50 border-emerald-100/50 hover:border-emerald-200'">
                         <input type="checkbox" id="is_active" x-model="itemModal.is_active" :disabled="itemModal.mode === 'view'"
-                            class="w-5 h-5 text-emerald-500 rounded-md border-slate-300 focus:ring-emerald-500 cursor-pointer">
-                        <label for="is_active" class="font-black text-emerald-900 cursor-pointer select-none">
+                            class="w-5 h-5 rounded-md border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                            :class="itemModal.mode === 'view' ? 'text-slate-400' : 'text-emerald-500'">
+                        <label for="is_active" class="font-black cursor-pointer select-none"
+                               :class="itemModal.mode === 'view' ? 'text-slate-600' : 'text-emerald-900'">
                             Elemento Activo (Visible en el catálogo)
                         </label>
                     </div>
@@ -25,34 +28,41 @@
                     <div>
                         <label class="block text-sm font-black text-[#1E55AA] mb-1">Nombre</label>
                         <input type="text" x-model="itemModal.name" required :disabled="itemModal.mode === 'view'"
-                            class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
+                            class="w-full rounded-xl py-3 px-4 font-bold outline-none transition-all"
+                            :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'border-2 border-slate-100 bg-white text-[#1E55AA] focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10'">
                     </div>
 
                     <div>
                         <label class="block text-sm font-black text-[#1E55AA] mb-1">Clave SAT</label>
                         <input type="text" x-model="itemModal.clave_prodserv" placeholder="80101500" maxlength="8" :disabled="itemModal.mode === 'view'"
-                            class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
+                            class="w-full rounded-xl py-3 px-4 font-bold outline-none transition-all"
+                            :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'border-2 border-slate-100 bg-white text-[#1E55AA] focus:border-[#1E55AA]'">
                     </div>
 
                     <div>
                         <label class="block text-sm font-black text-[#1E55AA] mb-1">Precio ($)</label>
                         <input type="number" step="0.5" x-model="itemModal.price" required :disabled="itemModal.mode === 'view'"
-                            class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
+                            class="w-full rounded-xl py-3 px-4 font-bold outline-none transition-all"
+                            :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'border-2 border-slate-100 bg-white text-[#1E55AA] focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10'">
                     </div>
 
                     {{-- Campo: Descripción (Solo Servicios y Suscripciones) --}}
                     <div x-show="itemModal.category === 'services' || itemModal.category === 'subscriptions'" x-collapse>
                         <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Descripción</label>
                         <textarea x-model="itemModal.description" rows="2" placeholder="Detalles adicionales..." :disabled="itemModal.mode === 'view'"
-                            class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors"></textarea>
+                            class="w-full px-5 py-3 rounded-xl font-bold focus:outline-none transition-colors"
+                            :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'"></textarea>
                     </div>
 
                     {{-- Campo: Checkbox Es Orden --}}
                     <div x-show="itemModal.category === 'services'"
-                        class="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 transition-colors hover:border-[#1E55AA]/30">
+                        class="flex items-center gap-3 p-4 rounded-2xl border-2 transition-colors"
+                        :class="itemModal.mode === 'view' ? 'bg-slate-50 border-slate-100' : 'bg-slate-50 border-slate-100 hover:border-[#1E55AA]/30'">
                         <input type="checkbox" id="is_for_orders" x-model="itemModal.is_for_orders" :disabled="itemModal.mode === 'view' || itemModal.mode === 'delete'"
-                            class="w-5 h-5 text-[#1E55AA] rounded-md border-slate-300 focus:ring-[#1E55AA] cursor-pointer">
-                        <label for="is_for_orders" class="font-black text-[#1E55AA] cursor-pointer select-none">
+                            class="w-5 h-5 rounded-md border-slate-300 cursor-pointer"
+                            :class="itemModal.mode === 'view' ? 'text-slate-400 focus:ring-slate-400' : 'text-[#1E55AA] focus:ring-[#1E55AA]'">
+                        <label for="is_for_orders" class="font-black cursor-pointer select-none"
+                               :class="itemModal.mode === 'view' ? 'text-slate-600' : 'text-[#1E55AA]'">
                             Este servicio es por encargo
                         </label>
                     </div>
@@ -62,12 +72,14 @@
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Stock</label>
                             <input type="number" x-model="itemModal.stock" placeholder="0" :disabled="itemModal.mode === 'view'"
-                                class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors">
+                                class="w-full px-5 py-3 rounded-xl font-bold focus:outline-none transition-colors"
+                                :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'">
                         </div>
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Unidad de Medida</label>
                             <select x-model="itemModal.unit" :disabled="itemModal.mode === 'view'"
-                                class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors appearance-none cursor-pointer">
+                                class="w-full px-5 py-3 rounded-xl font-bold focus:outline-none transition-colors appearance-none cursor-pointer"
+                                :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner opacity-100' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'">
                                 <option value="H87" selected>H87 - Pieza</option>
                                 <option value="E48">E48 - Unidad de servicio</option>
                                 <option value="ACT">ACT - Actividad</option>
@@ -89,7 +101,8 @@
                     <div x-show="itemModal.category === 'subscriptions'" x-collapse>
                         <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Duración (Meses)</label>
                         <input type="number" x-model="itemModal.duration_months" placeholder="1" :disabled="itemModal.mode === 'view'"
-                            class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors">
+                            class="w-full px-5 py-3 rounded-xl font-bold focus:outline-none transition-colors"
+                            :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'">
                     </div>
 
                     {{-- Botones Inferiores dinámicos --}}
@@ -105,17 +118,11 @@
             </template>
 
             <template x-if="itemModal.mode === 'delete'">
-                <div class="text-center">
-                    <p class="text-lg font-bold text-slate-600 mb-6">¿Seguro que deseas eliminar <span class="text-[#1E55AA]" x-text="itemModal.name"></span>?</p>
-                    <div class="flex gap-3">
-                        <button @click="closeModal()" class="flex-1 py-3 rounded-xl font-black text-[#1E55AA]/60 bg-slate-100 hover:bg-slate-200 transition-all">Cancelar</button>
-                        <button @click="deleteItem()" class="flex-1 py-3 rounded-xl font-black text-white bg-rose-500 shadow-lg shadow-rose-500/20 hover:bg-rose-600 transition-all">Eliminar</button>
-                    </div>
-                </div>
-            </template>
+                </template>
         </div>
     </div>
 </div>
+
 
 {{-- Modal Pre-Confirmación (Checkout con Fechas) --}}
 <div x-cloak x-show="showPreConfirmacion" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">

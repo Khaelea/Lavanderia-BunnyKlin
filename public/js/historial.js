@@ -2,6 +2,11 @@ document.addEventListener("alpine:init", () => {
     Alpine.data("historialSystem", () => ({
         ventas: [],
         ventasFiltradas: [],
+        pagination: {
+            current_page: 1,
+            last_page: 1,
+            links: [],
+        },
         tipoFiltro: "todas",
         valorFiltro: "",
         mesesDisponibles: [],
@@ -13,20 +18,53 @@ document.addEventListener("alpine:init", () => {
 
         init() {
             this.cargarDatos();
+
+            // Si el usuario cambia el menú (ej. de "dia" a "todas"), reseteamos la fecha
             this.$watch("tipoFiltro", (value) => {
+                this.valorFiltro = "";
                 if (value === "todas") {
-                    this.valorFiltro = "";
-                } else if (
-                    value === "mes" &&
-                    this.mesesDisponibles.length > 0
-                ) {
-                    this.valorFiltro = this.mesesDisponibles[0].valor;
-                } else if (value === "dia" && this.diasDisponibles.length > 0) {
-                    this.valorFiltro = this.diasDisponibles[0];
+                    this.cargarDatos(); // Recargamos la tabla sin filtros
                 }
-                this.filtrarVentas();
             });
-            this.$watch("valorFiltro", () => this.filtrarVentas());
+
+            // Si el usuario elige una fecha en el calendario, pedimos los datos a Laravel
+            this.$watch("valorFiltro", (value) => {
+                if (value !== "") {
+                    this.cargarDatos();
+                }
+            });
+
+            this.$watch("tipoFiltro", (value) => {
+                this.valorFiltro = "";
+                this.cargarDatos();
+            });
+
+            this.$watch("valorFiltro", (value) => {
+                if (this.tipoFiltro === "folio") {
+                    this.cargarDatos();
+                }
+            });
+
+            // Inicializar el selector de Mes
+            flatpickr(this.$refs.filtroMes, {
+                plugins: [
+                    new monthSelectPlugin({
+                        shorthand: true,
+                        dateFormat: "Y-m", // Formato que tu controlador necesita
+                    }),
+                ],
+                onChange: (selectedDates, dateStr) => {
+                    this.valorFiltro = dateStr; // Actualiza Alpine
+                },
+            });
+
+            // Inicializar el selector de Día
+            flatpickr(this.$refs.filtroDia, {
+                dateFormat: "Y-m-d", // Formato que tu controlador necesita
+                onChange: (selectedDates, dateStr) => {
+                    this.valorFiltro = dateStr; // Actualiza Alpine
+                },
+            });
         },
 
         // Adaptado para leer la relación 'items' de Laravel o tus respaldos locales
@@ -37,20 +75,37 @@ document.addEventListener("alpine:init", () => {
             return venta?.items || venta?.detalles || venta?.productos || [];
         },
 
-        async cargarDatos() {
+        async cargarDatos(url = "/ventas/api-historial") {
             try {
-                // Hacemos la petición al controlador de Laravel
-                const response = await fetch("/ventas/api-historial");
+                // Preparamos la URL
+                const urlObj = new URL(url, window.location.origin);
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Si es una nueva búsqueda (no viene de darle clic a "Página 2"), inyectamos los filtros actuales
+                if (
+                    !urlObj.searchParams.has("page") &&
+                    this.tipoFiltro !== "todas" &&
+                    this.valorFiltro
+                ) {
+                    urlObj.searchParams.append("tipo", this.tipoFiltro);
+                    urlObj.searchParams.append("fecha", this.valorFiltro);
                 }
 
-                const dataCruda = await response.json();
+                const response = await fetch(urlObj);
+                if (!response.ok) throw new Error("Error HTTP de Laravel");
 
-                // Mapeamos los datos reales de la base de datos a la estructura que espera Alpine
-                this.ventas = dataCruda.data.map((venta) => {
-                    // Formateamos la fecha a DD/MM/YYYY, HH:MM
+                const dataApi = await response.json();
+
+                // Extraemos la paginación y el total real de la nueva estructura
+                const paginator = dataApi.paginacion;
+                this.totalFiltro = dataApi.total_filtro; // <--- AQUÍ ESTÁ LA SUMA REAL
+
+                // Actualizamos los controles de paginación
+                this.pagination.current_page = paginator.current_page;
+                this.pagination.last_page = paginator.last_page;
+                this.pagination.links = paginator.links;
+
+                // Las ventas ya nos llegan filtradas y listas desde Laravel
+                this.ventasFiltradas = paginator.data.map((venta) => {
                     const fechaObj = new Date(venta.created_at);
                     const dia = String(fechaObj.getDate()).padStart(2, "0");
                     const mes = String(fechaObj.getMonth() + 1).padStart(
@@ -63,35 +118,19 @@ document.addEventListener("alpine:init", () => {
                         2,
                         "0",
                     );
-                    const fechaFormateada = `${dia}/${mes}/${anio}, ${hora}:${minutos}`;
 
                     return {
                         id: venta.id,
                         folio: venta.reference,
-                        fecha: fechaFormateada,
+                        fecha: `${dia}/${mes}/${anio}, ${hora}:${minutos}`,
                         total: parseFloat(venta.total),
-                        // Nos aseguramos de que items sea siempre un arreglo
                         items: venta.items || [],
                     };
                 });
-
-                // Si todo sale bien, eliminamos la basura vieja del localStorage para evitar confusiones futuras
-                localStorage.removeItem("historial_ventas");
             } catch (error) {
-                console.error(
-                    "🚨 Error cargando el historial desde la base de datos:",
-                    error,
-                );
-                // Si la base de datos falla, vaciamos la tabla en vez de mostrar datos falsos.
-                this.ventas = [];
-                alert(
-                    "No se pudo conectar con la base de datos para cargar el historial.",
-                );
+                console.error("🚨 Error cargando el historial:", error);
+                this.ventasFiltradas = [];
             }
-
-            // Estas funciones reconstruyen los filtros y la vista con los datos nuevos
-            this.extraerFechas();
-            this.filtrarVentas();
         },
 
         verTicket(venta) {
