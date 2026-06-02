@@ -33,7 +33,7 @@ class MenuHelper
                 'title' => 'CATÁLOGOS',
                 'items' => [
                     [
-                        'name' => 'Servicios y Productos',
+                        'name' => 'Servicios',
                         'icon' => 'ui-elements',
                         'path' => '/servicios',
                     ],
@@ -41,6 +41,11 @@ class MenuHelper
                         'name' => 'Inventario (Insumos)',
                         'icon' => 'task',
                         'path' => '/insumos',
+                    ],
+                    [
+                        'name' => 'Suscripciones',
+                        'icon' => 'ui-elements',
+                        'path' => '/suscripciones',
                     ],
                 ],
             ],

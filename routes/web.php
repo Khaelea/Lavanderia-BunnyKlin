@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\BrickPagoController;
@@ -17,6 +18,10 @@ use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\SalesController;
 // Import para Controlador de orders
 use App\Http\Controllers\OrderController;
+// Import para modelo de cliente
+use App\Models\Client;
+// Import para controlador de clientes
+use App\Http\Controllers\ClientController;
 
 /*
 |--------------------------------------------------------------------------
@@ -29,12 +34,13 @@ use App\Http\Controllers\OrderController;
 // =========================================================
 
 Route::get('/', function () {
-    $services = App\Models\Service::query()
-        ->where('is_active', true) 
+
+    $services = Service::query()
+        ->where('is_active', true)
         ->where('is_for_orders', false)
         ->get();
-    $supplies = App\Models\Supply::query()->where('is_active', true)->get();
-    $subscriptions = App\Models\Subscription::query()->where('is_active', true)->get();
+    $supplies = Supply::query()->where('is_active', true)->get();
+    $subscriptions = Subscription::query()->where('is_active', true)->get();
 
     return view('pages.pos', [
         'title'         => 'Punto de Venta',
@@ -45,7 +51,7 @@ Route::get('/', function () {
 })->name('pos');
 
 // Ruta para cambiar el estado de un elemento del catalogo
-Route::patch('/catalogo/toggle-estado', [App\Http\Controllers\CatalogoController::class, 'toggleEstado'])->name('catalogo.toggle');
+Route::patch('/catalogo/toggle-estado', [CatalogoController::class, 'toggleEstado'])->name('catalogo.toggle');
 
 // Ruta para guardar cosas del catalogo
 Route::post('/catalogo/guardar', [CatalogoController::class, 'store'])->name('catalogo.store');
@@ -59,15 +65,15 @@ Route::post('/ventas/checkout', [SalesController::class, 'store'])->name('ventas
 // Ruta para obtener el historial de compras
 Route::get('/ventas/api-historial', [SalesController::class, 'apiHistorial']);
 // Ruta para borrar múltiples ventas a la vez
-Route::delete('/ventas/bulk', [App\Http\Controllers\SalesController::class, 'destroyBulk'])->name('ventas.bulkDestroy');
+Route::delete('/ventas/bulk', [SalesController::class, 'destroyBulk'])->name('ventas.bulkDestroy');
 // Ruta para borrar una sola venta
-Route::delete('/ventas/{id}', [App\Http\Controllers\SalesController::class, 'destroy'])->name('ventas.destroy');
+Route::delete('/ventas/{id}', [SalesController::class, 'destroy'])->name('ventas.destroy');
 
 // Rutas para clientes
-Route::get('/api/clientes/init', [App\Http\Controllers\ClientController::class, 'apiInit']);
-Route::post('/api/clientes', [App\Http\Controllers\ClientController::class, 'store']);
-Route::put('/api/clientes/{client}', [App\Http\Controllers\ClientController::class, 'update']);
-Route::delete('/api/clientes/{client}', [App\Http\Controllers\ClientController::class, 'destroy']);
+Route::get('/api/clientes/init', [ClientController::class, 'apiInit']);
+Route::post('/api/clientes', [ClientController::class, 'store']);
+Route::put('/api/clientes/{client}', [ClientController::class, 'update']);
+Route::delete('/api/clientes/{client}', [ClientController::class, 'destroy']);
 
 // Rutas para ordenes/pedidos
 Route::prefix('api/orders')->group(function () {
@@ -99,14 +105,27 @@ Route::get('/maquinas', function () {
 // =========================================================
 
 Route::get('/servicios', function () {
-    $services = App\Models\Service::query()->latest()->get();
-    return view('pages.servicios', ['title' => 'Servicios y Productos', 'services' => $services]);
+    $services = Service::query()->latest()->get();
+    return view('pages.servicios', ['title' => 'Servicios', 'services' => $services]);
 })->name('servicios');
 
 Route::get('/insumos', function () {
-    $supplies = App\Models\Supply::query()->latest()->get();
+    $supplies = Supply::query()->latest()->get();
     return view('pages.insumos', ['title' => 'Inventario de Insumos', 'supplies' => $supplies]);
 })->name('insumos');
+
+Route::get('/suscripciones', function () {
+    $subscriptions = Subscription::query()->latest()->get();
+    $totalSubscribedClients = Client::query()
+        ->whereNotNull('subscription_id')
+        ->where('end_subscription', '>=', now())
+        ->count();
+    return view('pages.suscripciones', [
+        'title' => 'Suscripciones',
+        'subscriptions' => $subscriptions,
+        'totalSubscribedClients' => $totalSubscribedClients
+    ]);
+})->name('suscripciones');
 
 // =========================================================
 // 3. SECCIÓN OPERACIÓN
