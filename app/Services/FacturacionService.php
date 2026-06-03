@@ -16,21 +16,6 @@ class FacturacionService
 
     public function crearFactura(array $cliente, array $items, $formaPago, string $metodoPago)
     {
-<<<<<<< HEAD
-        $usoCFDI = $cliente['use'] ?? 'S01'; 
-        unset($cliente['use']);
-
-        $formaPagoLimpia = sprintf("%02d", (int)$formaPago);
-
-        try {
-            $resultado = $this->facturapi->Invoices->create([
-                "customer"       => $cliente,
-                "items"          => $items,
-                "payment_form"   => $formaPagoLimpia,
-                "payment_method" => $metodoPago,
-                "use"            => $usoCFDI,
-                "type"           => "I",
-=======
         // 1. Extraer y limpiar el Uso de CFDI
         $usoCFDI = $cliente['use'] ?? 'S01'; 
         unset($cliente['use']);
@@ -40,20 +25,18 @@ class FacturacionService
         $formaPagoLimpia = sprintf("%02d", (int)$formaPago);
 
         try {
-            return $this->facturapi->Invoices->create([
-                "customer" => $cliente,
-                "items" => $items,
-                "payment_form" => $formaPagoLimpia, // Aseguramos que tenga 2 dígitos
+            $resultado = $this->facturapi->Invoices->create([
+                "customer"       => $cliente,
+                "items"          => $items,
+                "payment_form"   => $formaPagoLimpia, // Aseguramos que tenga 2 dígitos
                 "payment_method" => $metodoPago,
-                "use" => $usoCFDI, // Uso de CFDI
-                "type" => "I", // I = Ingreso, E = Egreso, N = Nómina
-                //"dispatch" => true // Esto la envía por correo automáticamente
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
+                "use"            => $usoCFDI, // Uso de CFDI
+                "type"           => "I", // I = Ingreso, E = Egreso, N = Nómina
+                //"dispatch"     => true // Esto la envía por correo automáticamente
             ]);
 
             // Verificamos que realmente devolvió algo con ID
-
-            //Intentar comentar para ver si Hostgator no tiene problemas con la respuesta de Facturapi, ya que a veces devuelve un objeto sin ID pero con la factura creada. Si esto causa problemas, se puede ajustar la lógica para manejar ambos casos.
+            // Intentar comentar para ver si Hostgator no tiene problemas con la respuesta de Facturapi, ya que a veces devuelve un objeto sin ID pero con la factura creada. Si esto causa problemas, se puede ajustar la lógica para manejar ambos casos.
             if (!$resultado || !isset($resultado->id)) {
                 throw new \Exception("Facturapi no devolvió una factura válida. Respuesta: " . json_encode($resultado));
             }

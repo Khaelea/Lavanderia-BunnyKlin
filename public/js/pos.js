@@ -3,7 +3,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
         if (!data || !Array.isArray(data)) return [];
         return data.map(item => ({
             id: item.id,
-            clave_prodserv: item.clave_prodserv,
+            clave_prodserv: item.clave_prodserv || null,
             name: item.name,
             price: parseFloat(item.price),
             category: category,
@@ -11,23 +11,17 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             stock: item.stock || null,
             unit: item.unit || null,
             duration_months: item.duration_months || null,
-<<<<<<< HEAD
-            clave_prodserv: item.clave_prodserv || null,
             is_active: item.is_active ? true : false,
             is_for_orders: item.is_for_orders ? true : false,
-=======
-            clave_prodserv: item.clave_prodserv || null, // <-- Lo que agregó tu compañero para que cargue la clave SAT
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
         }));
     };
-
+    
     return {
         activeMode: "sale",
         showPreConfirmacion: false,
         showConfirmacion: false,
         ultimaVenta: null,
         itemModal: {
-<<<<<<< HEAD
             open: false,
             mode: "add",
             category: "",
@@ -41,17 +35,11 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             duration_months: 1,
             is_active: true,
             is_for_orders: false,
-=======
-            open: false, mode: "add", category: "",
-            id: null, name: "", clave_prodserv: "", price: "",
-            description: "", stock: 0, unit: "", duration_months: 1,
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
         },
         esperandoTerminal: false,
         showErrorModal: false,
         errorPago: "",
         debugStatus: "",
-        // Parche para error Alpine
         tiempoFormateado: "",
         clienteForm: { nombre: "", telefono: "", inicio: "", fin: "" },
         
@@ -96,15 +84,15 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
         removeItem(index) { this.cart.splice(index, 1); },
         clearCart() { this.cart = []; },
 
-        // ========== MODALES DE ÍTEMS ==========
+        // ========== MODALES DE 脥TEMS ==========
         openAddModal(category) {
             this.itemModal = {
-<<<<<<< HEAD
                 open: true,
                 mode: "add",
                 category: category,
                 id: null,
                 name: "",
+                clave_prodserv: "",
                 price: "",
                 description: "",
                 stock: 0,
@@ -130,21 +118,16 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 duration_months: item.duration_months || null,
                 is_for_orders: item.is_for_orders ? true : false,
                 is_active: item.is_active ? true : false,
-=======
-                open: true, mode: "add", category: category,
-                id: null, name: "", clave_prodserv: "", price: "",
-                description: "", stock: 0, unit: "", duration_months: 1
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
             };
         },
+
         openEditModal(item, category) {
             this.itemModal = {
-<<<<<<< HEAD
                 open: true,
                 mode: "edit",
                 category: category,
                 id: item.id,
-                clave_prodserv: item.clave_prodserv || null,
+                clave_prodserv: item.clave_prodserv || "",
                 name: item.name,
                 price: item.price,
                 description: item.description || null,
@@ -153,18 +136,11 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 duration_months: item.duration_months || null,
                 is_active: item.is_active ? true : false,
                 is_for_orders: item.is_for_orders ? true : false,
-=======
-                open: true, mode: "edit", category: category,
-                id: item.id, name: item.name, clave_prodserv: item.clave_prodserv || "",
-                price: item.price, description: item.description || null,
-                stock: item.stock || null, unit: item.unit || null,
-                duration_months: item.duration_months || null
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
             };
         },
+
         openDeleteModal(item, category) {
             this.itemModal = {
-<<<<<<< HEAD
                 open: true,
                 mode: "delete",
                 category: category,
@@ -178,13 +154,6 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 duration_months: item.duration_months || null,
                 is_active: item.is_active ? true : false,
                 is_for_orders: item.is_for_orders ? true : false,
-=======
-                open: true, mode: "delete", category: category,
-                id: item.id, name: item.name, price: item.price,
-                description: item.description || null,
-                stock: item.stock || null, unit: item.unit || null,
-                duration_months: item.duration_months || null
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
             };
         },
         closeModal() { this.itemModal.open = false; },
@@ -195,11 +164,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             const payload = {
                 id: this.itemModal.id,
                 category: this.itemModal.category,
-<<<<<<< HEAD
-                clave_prodserv: this.itemModal.clave_prodserv,
-=======
                 clave_prodserv: this.itemModal.clave_prodserv || "",
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                 name: this.itemModal.name,
                 price: priceVal,
                 description: this.itemModal.description,
@@ -224,35 +189,20 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                     "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
                 };
                 if (this.itemModal.mode === "add") {
-<<<<<<< HEAD
                     const response = await fetch("/catalogo/guardar", {
                         method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            Accept: "application/json",
-                            "X-CSRF-TOKEN": document
-                                .querySelector('meta[name="csrf-token"]')
-                                .getAttribute("content"),
-                        },
+                        headers: headers,
                         body: JSON.stringify(payload),
                     });
 
                     if (!response.ok) {
                         const errorCrudo = await response.text();
-                        console.error(
-                            "🚨 DETALLE DEL ERROR DE LARAVEL:",
-                            errorCrudo,
-                        );
+                        console.error("馃毃 DETALLE DEL ERROR DE LARAVEL:", errorCrudo);
                         try {
                             const errorJson = JSON.parse(errorCrudo);
-                            alert(
-                                "Error del servidor: " +
-                                    (errorJson.message || errorJson.error),
-                            );
+                            alert("Error del servidor: " + (errorJson.message || errorJson.error));
                         } catch (e) {
-                            alert(
-                                "Error crítico del servidor. Revisa la consola.",
-                            );
+                            alert("Error cr铆tico del servidor. Revisa la consola.");
                         }
                         return;
                     }
@@ -264,12 +214,6 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         price: parseFloat(data.item.price),
                         category: this.itemModal.category,
                     });
-=======
-                    const res = await fetch("/catalogo/guardar", { method: "POST", headers, body: JSON.stringify(payload) });
-                    if (!res.ok) throw new Error((await res.json().catch(()=>{})).message || "Error al guardar");
-                    const data = await res.json();
-                    targetList.push({ id: data.item.id, name: data.item.name, price: parseFloat(data.item.price), category: this.itemModal.category, clave_prodserv: data.item.clave_prodserv });
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                 } else {
                     const res = await fetch("/catalogo/actualizar", { method: "PUT", headers, body: JSON.stringify(payload) });
                     if (!res.ok) throw new Error("Error al actualizar");
@@ -281,27 +225,12 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         targetList[idx].description = data.item.description || null;
                         targetList[idx].stock = data.item.stock || null;
                         targetList[idx].unit = data.item.unit || null;
-<<<<<<< HEAD
-                        targetList[idx].duration_months =
-                            data.item.duration_months || null;
-                        targetList[idx].is_active = data.item.is_active
-                            ? true
-                            : false;
-                        targetList[idx].is_for_orders = data.item.is_for_orders
-                            ? true
-                            : false;
-
-                        // Actualizamos el item en el carrito
-                        let cartIdx = this.cart.findIndex(
-                            (c) =>
-                                c.id === this.itemModal.id &&
-                                c.category === this.itemModal.category,
-                        );
-=======
                         targetList[idx].duration_months = data.item.duration_months || null;
                         targetList[idx].clave_prodserv = data.item.clave_prodserv || null;
+                        targetList[idx].is_active = data.item.is_active ? true : false;
+                        targetList[idx].is_for_orders = data.item.is_for_orders ? true : false;
+                        
                         let cartIdx = this.cart.findIndex(c => c.id === this.itemModal.id && c.category === this.itemModal.category);
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                         if (cartIdx !== -1) {
                             this.cart[cartIdx].name = data.item.name;
                             this.cart[cartIdx].price = parseFloat(data.item.price);
@@ -349,29 +278,23 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             }
         },
 
-<<<<<<< HEAD
         async toggleServiceStatus(service) {
-            // 1. Invertimos el estado localmente para una respuesta visual instantánea (UX)
             const nuevoEstado = !service.is_active;
             service.is_active = nuevoEstado;
 
-            // 2. Preparamos el payload mínimo necesario para el backend
             const payload = {
                 id: service.id,
-                category: service.category || "services", // Aseguramos que sepa qué tabla actualizar
+                category: service.category || "services", 
                 is_active: nuevoEstado,
             };
 
             try {
-                // 3. Enviamos la petición al servidor a una nueva ruta específica
                 const response = await fetch("/catalogo/toggle-estado", {
                     method: "PATCH",
                     headers: {
                         "Content-Type": "application/json",
                         Accept: "application/json",
-                        "X-CSRF-TOKEN": document
-                            .querySelector('meta[name="csrf-token"]')
-                            .getAttribute("content"),
+                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
                     },
                     body: JSON.stringify(payload),
                 });
@@ -379,68 +302,15 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 if (!response.ok) {
                     throw new Error("Error en el servidor");
                 }
-
-                // (Opcional) Si quieres actualizar el contador de inactivos, Alpine lo hará solo
-                // porque el arreglo 'services' ya mutó en el paso 1.
             } catch (error) {
                 console.error("Error al cambiar estado:", error);
-
-                // 4. Revertimos el estado visual si la petición falló
                 service.is_active = !nuevoEstado;
-                alert("Hubo un problema de conexión. El estado no se cambió.");
+                alert("Hubo un problema de conexi贸n. El estado no se cambi贸.");
             }
         },
 
-        addToCart(item, category) {
-            let found = this.cart.find(
-                (i) => i.id === item.id && i.category === category,
-            );
-            if (found) {
-                found.quantity++;
-            } else {
-                this.cart.push({
-                    ...item,
-                    category: category,
-                    quantity: 1,
-                    cart_id: category + "-" + item.id,
-                });
-            }
-        },
-
-        updateQty(index, amount) {
-            this.cart[index].quantity =
-                (parseInt(this.cart[index].quantity) || 0) + amount;
-            if (this.cart[index].quantity <= 0) this.removeItem(index);
-        },
-
-        removeItem(index) {
-            this.cart.splice(index, 1);
-        },
-
-        clearCart() {
-            this.cart = [];
-        },
-
-        get total() {
-            return this.cart.reduce(
-                (sum, item) =>
-                    sum + item.price * (parseFloat(item.quantity) || 0),
-                0,
-            );
-        },
-
-        formatMoney(amount) {
-            return new Intl.NumberFormat("es-MX", {
-                style: "currency",
-                currency: "MXN",
-            }).format(amount);
-        },
-
-        checkout() {
-=======
         // ========== FLUJO DE COBRO ==========
         checkout() { 
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
             if (this.cart.length) {
                 const today = new Date();
                 const nextMonth = new Date();
@@ -461,7 +331,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
         mostrarError(mensaje) {
             if (typeof mensaje !== 'string') mensaje = String(mensaje);
             if (mensaje.startsWith('<') || mensaje.includes('Unexpected token')) {
-                mensaje = 'Error inesperado. Verifique la conexión.';
+                mensaje = 'Error inesperado. Verifique la conexi贸n.';
             }
             this.errorPago = mensaje;
             this.showErrorModal = true;
@@ -473,17 +343,17 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             this.showPreConfirmacion = true;
         },
 
-        cancelarTerminal() {
+        cancelarTerminal(mensaje = "Operaci贸n cancelada por el usuario.") {
             this.pollingActive = false;
             this.esperandoTerminal = false;
             this.debugStatus = "";
-            this.mostrarError("Operación cancelada por el usuario.");
+            this.mostrarError(mensaje);
         },
 
         async confirmarCheckout(metodo = "Terminal") {
             if (metodo === "Terminal") {
                 if (this.total < 5) {
-                    this.mostrarError("El monto mínimo es de $5.00 MXN para procesar tarjeta.");
+                    this.mostrarError("El monto m铆nimo es de $5.00 MXN para procesar tarjeta.");
                     return;
                 }
 
@@ -513,7 +383,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                             const err = await response.json();
                             throw new Error(err.error || err.message || "Error del servidor");
                         } else {
-                            throw new Error("El servidor no respondió correctamente.");
+                            throw new Error("El servidor no respondi贸 correctamente.");
                         }
                     }
 
@@ -564,12 +434,10 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         const paymentStatus = (statusData.payment_status || '').toUpperCase();
                         this.debugStatus = `Estado: ${status || '?'} / Pago: ${paymentStatus || '?'} (intento ${intentos})`;
 
-                        // Estados de espera
                         if (['OPEN', 'ON_TERMINAL', 'PROCESSING', 'READY'].includes(status)) {
                             continue;
                         }
 
-                        // Cualquier otro estado es final
                         pagoFinalizado = true;
 
                         if (status === 'FINISHED' && paymentStatus === 'APPROVED') {
@@ -580,7 +448,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         } else {
                             let msj = 'El pago no fue aprobado.';
                             if (status === 'CANCELED' || status === 'ABANDONED') msj = 'Pago cancelado en la terminal.';
-                            else if (status === 'FINISHED' && paymentStatus === 'REJECTED') msj = 'Tarjeta rechazada. Intente otro método.';
+                            else if (status === 'FINISHED' && paymentStatus === 'REJECTED') msj = 'Tarjeta rechazada. Intente otro m茅todo.';
                             else if (status === 'ERROR') msj = 'Error en la terminal. Intente nuevamente.';
                             throw new Error(msj);
                         }
@@ -600,7 +468,6 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 return;
             }
 
-            // Efectivo
             this.finalizarVentaLocal("Efectivo");
         },
 
@@ -610,7 +477,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                     total: parseFloat(this.total).toFixed(2),
                     metodo_pago: metodo,
                     detalles: this.cart,
-                    cliente: this.clienteForm.nombre.trim() || "Público en General"
+                    cliente: this.clienteForm.nombre.trim() || "P煤blico en General"
                 };
                 const response = await fetch("/ventas/checkout", {
                     method: "POST",

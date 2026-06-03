@@ -1,10 +1,7 @@
-<<<<<<< HEAD
 {{-- Modal de Edición/Creación/Vista de Productos del POS --}}
-<div x-cloak x-show="itemModal.open" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
-=======
-{{-- Modal de Edición/Creación de Productos del POS --}}
-<div x-show="itemModal.open" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
+<div x-cloak x-show="itemModal.open" 
+     style="display: none;"
+     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-slate-100 w-full max-w-md overflow-hidden animate-fade-in" @click.stop>
 
         {{-- Encabezado dinámico --}}
@@ -32,19 +29,12 @@
                         <input type="text" x-model="itemModal.name" required :disabled="itemModal.mode === 'view'"
                             class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
                     </div>
-<<<<<<< HEAD
 
+                    {{-- Campo Clave SAT --}}
                     <div>
                         <label class="block text-sm font-black text-[#1E55AA] mb-1">Clave SAT</label>
                         <input type="text" x-model="itemModal.clave_prodserv" placeholder="80101500" maxlength="8" :disabled="itemModal.mode === 'view'"
                             class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
-=======
-                    
-                    {{-- NUEVO: Campo Clave SAT (Agregado de tu compañero) --}}
-                    <div>
-                        <label class="block text-sm font-black text-[#1E55AA] mb-1">Clave SAT</label>
-                        <input type="text" x-model="itemModal.clave_prodserv" placeholder="80101500" maxlength="8" class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] transition-all">
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                     </div>
 
                     <div>
@@ -53,7 +43,7 @@
                             class="w-full rounded-xl border-2 border-slate-100 bg-white py-3 px-4 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 disabled:opacity-60 disabled:bg-[#F4F8FC] transition-all">
                     </div>
 
-                    {{-- Campo: Descripción (Solo Servicios y Suscripciones) --}}
+                    {{-- Campo: Descripción --}}
                     <div x-show="itemModal.category === 'services' || itemModal.category === 'subscriptions'" x-transition>
                         <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Descripción</label>
                         <textarea x-model="itemModal.description" rows="2" placeholder="Detalles adicionales..." :disabled="itemModal.mode === 'view'"
@@ -70,42 +60,25 @@
                         </label>
                     </div>
 
-                    {{-- Campos: Stock y Unidad (Solo Insumos) --}}
+                    {{-- Campos: Stock y Unidad --}}
                     <div x-show="itemModal.category === 'supplies'" class="grid grid-cols-2 gap-4" x-transition>
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Stock</label>
                             <input type="number" x-model="itemModal.stock" placeholder="0" :disabled="itemModal.mode === 'view'"
                                 class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors">
                         </div>
-                        {{-- NUEVO: Select de Unidad de Medida (Agregado de tu compañero) --}}
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Unidad de Medida</label>
-<<<<<<< HEAD
                             <select x-model="itemModal.unit" :disabled="itemModal.mode === 'view'"
                                 class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white disabled:opacity-60 transition-colors appearance-none cursor-pointer">
-=======
-                            <select x-model="itemModal.unit" class="w-full px-5 py-3 bg-slate-50 border-2 border-slate-200 rounded-xl text-[#1E55AA] font-bold focus:outline-none focus:border-[#1E55AA] focus:bg-white transition-colors">
-                                <!-- Las más comunes -->
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                                 <option value="H87" selected>H87 - Pieza</option>
                                 <option value="E48">E48 - Unidad de servicio</option>
                                 <option value="ACT">ACT - Actividad</option>
                                 <option value="C62">C62 - Uno (Sin unidad específica)</option>
-<<<<<<< HEAD
                                 <option value="KGM">KGM - Kilogramo</option>
                                 <option value="GRM">GRM - Gramo</option>
                                 <option value="LTR">LTR - Litro</option>
                                 <option value="MLT">MLT - Mililitro</option>
-=======
-                                
-                                <!-- Peso y Volumen -->
-                                <option value="KGM">KGM - Kilogramo</option>
-                                <option value="GRM">GRM - Gramo</option>
-                                <option value="LTR">LTR - Litro</option>
-                                <option value="MLT">MLT - Mililitro</option>                          
-                                
-                                <!-- Otras comunes -->
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
                                 <option value="SET">SET - Conjunto / Juego</option>
                                 <option value="XKI">XKI - Kit (Conjunto de Piezas)</option>
                                 <option value="DPC">DPC - Docena de Piezas</option>
@@ -115,7 +88,7 @@
                         </div>
                     </div>
 
-                    {{-- Campo: Duración (Solo Suscripciones) --}}
+                    {{-- Campo: Duración --}}
                     <div x-show="itemModal.category === 'subscriptions'" x-transition>
                         <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Duración (Meses)</label>
                         <input type="number" x-model="itemModal.duration_months" placeholder="1" :disabled="itemModal.mode === 'view'"
@@ -147,8 +120,10 @@
     </div>
 </div>
 
-{{-- Modal Pre-Confirmación (Checkout con Selección de Método) --}}
-<div x-show="showPreConfirmacion" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+{{-- Modal Pre-Confirmación --}}
+<div x-show="showPreConfirmacion" 
+     style="display: none;"
+     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-slate-100 w-full max-w-lg overflow-hidden animate-fade-in" @click.stop>
 
         <div class="p-6 border-b border-slate-100 bg-[#F4F8FC]">
@@ -205,7 +180,9 @@
 </div>
 
 {{-- Modal de Carga (Esperando Terminal) --}}
-<div x-show="esperandoTerminal" style="display: none;" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900 bg-opacity-75 backdrop-blur-sm p-4 transition-opacity">
+<div x-show="esperandoTerminal" 
+     style="display: none;"
+     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden text-center p-8 relative" @click.stop>
         
         <div class="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-blue-50 mb-6 relative">
@@ -218,7 +195,7 @@
         <h3 class="text-2xl font-black text-[#1E55AA] mb-3">Procesando Pago...</h3>
         <p class="text-gray-500 font-bold leading-relaxed mb-8">Por favor, siga las instrucciones en la terminal Mercado Pago.</p>
         
-        <div class="flex justify-center items-center space-x-3">
+        <div class="flex justify-center items-center space-x-3 mb-4">
             <div class="h-3.5 w-3.5 rounded-full bg-yellow-400 animate-bounce"></div>
             <div class="h-3.5 w-3.5 rounded-full bg-blue-500 animate-bounce" style="animation-delay: 0.15s"></div>
             <div class="h-3.5 w-3.5 rounded-full bg-green-500 animate-bounce" style="animation-delay: 0.3s"></div>
@@ -227,7 +204,9 @@
 </div>
 
 {{-- Modal de Error de Pago --}}
-<div x-show="showErrorModal" style="display: none;" class="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+<div x-show="showErrorModal" 
+     style="display: none;"
+     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-rose-100 w-full max-w-sm overflow-hidden text-center p-8 animate-fade-in" @click.stop>
         
         <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner border border-rose-100">
@@ -244,7 +223,9 @@
 </div>
 
 {{-- Modal Éxito --}}
-<div x-show="showConfirmacion" style="display: none;" class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-opacity">
+<div x-show="showConfirmacion" 
+     style="display: none;"
+     class="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4 transition-opacity">
     <div class="bg-white rounded-3xl shadow-2xl border-2 border-slate-100 w-full max-w-sm overflow-hidden text-center p-8 animate-fade-in" @click.stop>
         <div class="w-20 h-20 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6">
             <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
@@ -254,5 +235,5 @@
         <button @click="cerrarConfirmacion()" class="w-full py-3.5 rounded-xl font-black text-[#1E55AA] bg-[#FFE63C] hover:bg-[#f5dd38] transition-all">
             Nueva Venta
         </button>
-    </div>
+    </div> 
 </div>

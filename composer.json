@@ -10,10 +10,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-<<<<<<< HEAD
         "barryvdh/laravel-dompdf": "^3.1",
-=======
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
         "facturapi/facturapi-php": "^4.4",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",

@@ -31,7 +31,6 @@ class ClientController extends Controller
     public function store(Request $request)
     {
         $datosValidados = $request->validate([
-<<<<<<< HEAD
             // Generales y Suscripción
             'name'                   => 'required|string|max:100',
             'phone'                  => 'nullable|string|max:20',
@@ -63,22 +62,6 @@ class ClientController extends Controller
             'fiscal_colonia'         => 'nullable|string|max:255',
             'fiscal_ciudad'          => 'nullable|string|max:255',
             'fiscal_estado'          => 'nullable|string|max:255',
-=======
-            'name'              => 'required|string|max:100',
-            'phone'             => 'nullable|string|max:20',
-            'subscription_id'   => 'nullable|exists:subscriptions,id',
-            'start_subscription' => 'nullable|date',
-            'wantsBilling'      => 'boolean',
-            'rfc'               => 'nullable|string|max:14',
-            'razon_social'      => 'nullable|string|max:255',
-            'codigo_postal'     => 'nullable|string|max:5',
-            'calle'             => 'nullable|string|max:255',
-            'numero_exterior'   => 'nullable|string|max:20',
-            'numero_interior'   => 'nullable|string|max:20',
-            'colonia'           => 'nullable|string|max:255',
-            'ciudad'            => 'nullable|string|max:255',
-            'estado'            => 'nullable|string|max:255',
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
         ]);
 
         $client = $this->clientService->guardarCliente($datosValidados);
@@ -90,7 +73,6 @@ class ClientController extends Controller
     public function update(Request $request, Client $client)
     {
         $datosValidados = $request->validate([
-<<<<<<< HEAD
             // Generales y Suscripción
             'name'                   => 'required|string|max:100',
             'phone'                  => 'nullable|string|max:20',
@@ -122,22 +104,6 @@ class ClientController extends Controller
             'fiscal_colonia'         => 'nullable|string|max:255',
             'fiscal_ciudad'          => 'nullable|string|max:255',
             'fiscal_estado'          => 'nullable|string|max:255',
-=======
-            'name'              => 'required|string|max:100',
-            'phone'             => 'nullable|string|max:20',
-            'subscription_id'   => 'nullable|exists:subscriptions,id',
-            'start_subscription' => 'nullable|date',
-            'wantsBilling'      => 'boolean',
-            'rfc'               => 'nullable|string|max:14',
-            'razon_social'      => 'nullable|string|max:255',
-            'codigo_postal'     => 'nullable|string|max:5',
-            'calle'             => 'nullable|string|max:255',
-            'numero_exterior'   => 'nullable|string|max:20',
-            'numero_interior'   => 'nullable|string|max:20',
-            'colonia'           => 'nullable|string|max:255',
-            'ciudad'            => 'nullable|string|max:255',
-            'estado'            => 'nullable|string|max:255',
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece
         ]);
 
         $client = $this->clientService->guardarCliente($datosValidados, $client);
@@ -151,8 +117,4 @@ class ClientController extends Controller
         $this->clientService->eliminarCliente($client);
         return response()->json(['success' => true]);
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> c50d591b03ec3e02d87b228327f0c8ed7dee8ece

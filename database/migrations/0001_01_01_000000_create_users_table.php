@@ -17,6 +17,13 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            
+            // --- NUEVOS APARTADOS PARA EL PERSONAL ---
+            $table->string('role')->default('Personal'); 
+            $table->string('status')->default('pendiente'); 
+            $table->string('confirmation_token')->nullable();
+            // -----------------------------------------
+
             $table->rememberToken();
             $table->timestamps();
         });

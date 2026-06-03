@@ -58,7 +58,13 @@ class MenuHelper
                         'icon' => 'user-profile',
                         'path' => '/clientes',
                     ],
-
+                    // --- NUEVO: GESTIÓN DE PERSONAL ---
+                    [
+                        'name' => 'Gestión de Personal',
+                        'icon' => 'user-profile', 
+                        'path' => '/personal',
+                    ],
+                    // ----------------------------------
                     [
                         'name' => 'Corte de Caja',
                         'icon' => 'charts',
