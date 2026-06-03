@@ -1,26 +1,29 @@
 <?php
 
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth; 
 use Illuminate\Http\Request;         
+use Illuminate\Support\Facades\Http;
+
 use App\Http\Controllers\PagoController;
 use App\Http\Controllers\BrickPagoController;
 use App\Http\Controllers\CalendarController;
 use App\Http\Controllers\FacturaController;
 use App\Http\Controllers\CajaController;
-use Illuminate\Support\Facades\Http;
-use App\Models\Service;
-use App\Models\Supply;
-use App\Models\Subscription;
 use App\Http\Controllers\CatalogoController;
 use App\Http\Controllers\TerminalController;
 use App\Http\Controllers\SalesController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\ClienteController;
 use App\Http\Controllers\ClientController;
-
-// Importamos el controlador de Empleados
 use App\Http\Controllers\EmpleadoController;
+
+use App\Models\Service;
+use App\Models\Supply;
+use App\Models\Subscription;
+use App\Models\Client;
+use App\Models\User; // <-- Modelo User importado correctamente
 
 /*
 |--------------------------------------------------------------------------
@@ -33,12 +36,13 @@ use App\Http\Controllers\EmpleadoController;
 // =========================================================
 
 Route::get('/', function () {
-    $services = App\Models\Service::query()
-        ->where('is_active', true) 
+    $services = Service::query()
+        ->where('is_active', true)
         ->where('is_for_orders', false)
         ->get();
-    $supplies = App\Models\Supply::query()->where('is_active', true)->get();
-    $subscriptions = App\Models\Subscription::query()->where('is_active', true)->get();
+    
+    $supplies = Supply::query()->where('is_active', true)->get();
+    $subscriptions = Subscription::query()->where('is_active', true)->get();
 
     return view('pages.pos', [
         'title'         => 'Punto de Venta',
@@ -48,22 +52,28 @@ Route::get('/', function () {
     ]);
 })->name('pos');
 
+// Ruta para cambiar el estado de un elemento del catalogo
 Route::patch('/catalogo/toggle-estado', [CatalogoController::class, 'toggleEstado'])->name('catalogo.toggle');
+
+// Rutas para guardar cosas del catalogo
 Route::post('/catalogo/guardar', [CatalogoController::class, 'store'])->name('catalogo.store');
 Route::put('/catalogo/actualizar', [CatalogoController::class, 'update'])->name('catalogo.update');
 Route::delete('/catalogo/eliminar', [CatalogoController::class, 'destroy'])->name('catalogo.destroy');
 
+// Rutas de ventas
 Route::post('/ventas/checkout', [SalesController::class, 'store'])->name('ventas.checkout');
 Route::get('/ventas/api-historial', [SalesController::class, 'apiHistorial']);
 Route::delete('/ventas/bulk', [SalesController::class, 'destroyBulk'])->name('ventas.bulkDestroy');
 Route::delete('/ventas/{id}', [SalesController::class, 'destroy'])->name('ventas.destroy');
 
+// Rutas para clientes
 Route::get('/api/clientes/init', [ClientController::class, 'apiInit']);
 Route::get('/api/clientes', [ClienteController::class, 'index']); 
 Route::post('/api/clientes', [ClientController::class, 'store']);
 Route::put('/api/clientes/{client}', [ClientController::class, 'update']);
 Route::delete('/api/clientes/{client}', [ClientController::class, 'destroy']);
 
+// Rutas para órdenes/pedidos
 Route::prefix('api/orders')->group(function () {
     Route::get('/init', [OrderController::class, 'apiInit']);
     Route::post('/', [OrderController::class, 'store']);
@@ -78,18 +88,35 @@ Route::get('/maquinas', function () { return view('pages.maquinas', ['title' => 
 // 2. SECCIÓN CATÁLOGOS E INVENTARIO
 // =========================================================
 Route::get('/catalogo', function () { return view('pages.catalogo', ['title' => 'Servicios y Productos']); })->name('catalogo');
+
 Route::get('/servicios', function () {
-    $services = App\Models\Service::query()->latest()->get();
-    return view('pages.servicios', ['title' => 'Servicios y Productos', 'services' => $services]);
+    $services = Service::query()->latest()->get();
+    return view('pages.servicios', ['title' => 'Servicios', 'services' => $services]);
 })->name('servicios');
+
 Route::get('/insumos', function () {
-    $supplies = App\Models\Supply::query()->latest()->get();
+    $supplies = Supply::query()->latest()->get();
     return view('pages.insumos', ['title' => 'Inventario de Insumos', 'supplies' => $supplies]);
 })->name('insumos');
+
 Route::get('/inventario', function () {
-    $insumos = App\Models\Supply::where('is_active', true)->get();
+    // Corregido: Llamamos a Supply directamente
+    $insumos = Supply::where('is_active', true)->get();
     return view('pages.inventario', ['title' => 'Inventario de Insumos', 'insumosDb' => $insumos]);
 })->name('inventario');
+
+Route::get('/suscripciones', function () {
+    $subscriptions = Subscription::query()->latest()->get();
+    $totalSubscribedClients = Client::query()
+        ->whereNotNull('subscription_id')
+        ->where('end_subscription', '>=', now())
+        ->count();
+    return view('pages.suscripciones', [
+        'title' => 'Suscripciones',
+        'subscriptions' => $subscriptions,
+        'totalSubscribedClients' => $totalSubscribedClients
+    ]);
+})->name('suscripciones');
 
 // =========================================================
 // 3. SECCIÓN OPERACIÓN Y CAJA
@@ -106,7 +133,8 @@ Route::get('/newcalendar', [CalendarController::class, 'index'])->name('calendar
 // 4. GESTIÓN DE PERSONAL 
 // =========================================================
 Route::get('/personal', function () { 
-    $empleados = App\Models\User::latest()->get(); 
+    // Corregido: Llamamos a User directamente
+    $empleados = User::latest()->get(); 
     return view('pages.personal', ['title' => 'Gestión de Personal', 'empleados' => $empleados]); 
 })->name('personal');
 

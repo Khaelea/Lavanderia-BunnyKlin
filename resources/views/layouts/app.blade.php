@@ -15,13 +15,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/plugins/monthSelect/index.js"></script>
+    <link rel="stylesheet" href="https://npmcdn.com/flatpickr/dist/plugins/monthSelect/style.css">
+
     <style>
         body {
             font-family: 'Nunito', sans-serif !important;
             background-color: #F4F8FC !important; /* Azul muy pálido para el fondo */
             color: #1E55AA !important; /* Main Blue Oficial */
         }
-        
+
         body.dark {
             background-color: #0f172a !important;
             color: #f8fafc !important;
@@ -29,40 +34,40 @@
 
         /* --- ESTILOS DEL MENÚ LATERAL --- */
         .menu-item {
-            border-radius: 0.75rem !important; 
+            border-radius: 0.75rem !important;
             margin-bottom: 0.35rem !important;
             font-weight: 700 !important;
             transition: all 0.2s ease !important;
         }
-        
+
         /* Items inactivos */
         .menu-item-inactive {
-            color: #D1E4F9 !important; 
+            color: #D1E4F9 !important;
         }
-        
+
         .menu-item-inactive:hover {
-            background-color: rgba(255, 255, 255, 0.1) !important; 
-            color: #FFFFFF !important; 
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            color: #FFFFFF !important;
         }
-        
+
         /* Item Activo */
         .menu-item-active {
-            background-color: #FFFFFF !important; 
+            background-color: #FFFFFF !important;
             color: #1E55AA !important; /* Main Blue Oficial */
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }
-        
+
         /* Iconos del menú */
         .menu-item-icon-inactive {
-            color: #7DA6D4 !important; 
+            color: #7DA6D4 !important;
         }
         .menu-item-inactive:hover .menu-item-icon-inactive {
-            color: #FFFFFF !important; 
+            color: #FFFFFF !important;
         }
         .menu-item-icon-active {
             color: #1E55AA !important; /* Main Blue Oficial */
         }
-        
+
         /* Ocultar flechas de inputs numéricos */
         input::-webkit-outer-spin-button,
         input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }

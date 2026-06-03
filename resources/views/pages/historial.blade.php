@@ -97,28 +97,42 @@
 
         {{-- FILTROS --}}
         <div class="mb-6 bg-white border-2 border-slate-100 rounded-2xl p-4 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                 <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Filtrar por:</span>
+
+                {{-- Selector Principal (Se queda igual) --}}
                 <select x-model="tipoFiltro" class="bg-[#F4F8FC] border-2 border-[#1E55AA]/10 text-[#1E55AA] text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-[#1E55AA] cursor-pointer">
                     <option value="todas">Historial Completo</option>
                     <option value="mes">Mes Específico</option>
                     <option value="dia">Día Exacto</option>
+                    <option value="folio">Folio</option>
                 </select>
-                <select x-show="tipoFiltro === 'mes'" x-model="valorFiltro" class="bg-[#FFE63C]/10 border-2 border-[#FFE63C]/50 text-[#1E55AA] text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-[#FFE63C] cursor-pointer">
-                    <template x-for="mes in mesesDisponibles" :key="mes.valor">
-                        <option :value="mes.valor" x-text="mes.nombre"></option>
-                    </template>
-                </select>
-                <select x-show="tipoFiltro === 'dia'" x-model="valorFiltro" class="bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-emerald-400 cursor-pointer">
-                    <template x-for="dia in diasDisponibles" :key="dia">
-                        <option :value="dia" x-text="dia"></option>
-                    </template>
-                </select>
+
+                {{-- Input Mes: Usamos x-ref="filtroMes" --}}
+                <input type="text" x-show="tipoFiltro === 'mes'" x-ref="filtroMes"
+                    class="bg-[#FFE63C]/10 border-2 border-[#FFE63C]/50 text-[#1E55AA] text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-[#FFE63C] cursor-pointer"
+                    placeholder="Seleccionar mes">
+
+
+                {{-- Input Día: Usamos x-ref="filtroDia" --}}
+                <input type="text" x-show="tipoFiltro === 'dia'" x-ref="filtroDia"
+                    class="bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-emerald-400 cursor-pointer"
+                    placeholder="Seleccionar día">
+
+                {{-- NUEVO: Input Folio --}}
+                <input type="text" x-show="tipoFiltro === 'folio'" x-model.debounce.500ms="valorFiltro"
+                    class="bg-rose-50 border-2 border-rose-100 text-rose-600 text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-rose-400"
+                    placeholder="Ej. BK-0001">
+
             </div>
-            <div class="inline-flex flex-col items-end rounded-xl bg-success/10 px-5 py-2 border border-success/20">
-                <span class="text-[10px] font-black text-success/70 uppercase tracking-widest" x-text="tipoFiltro === 'dia' ? 'Total del Día' : (tipoFiltro === 'mes' ? 'Total del Mes' : 'Total Histórico')"></span>
-                <span class="text-xl font-black text-success" x-text="formatMoney(totalFiltro)"></span>
+
+            {{-- ESTO SE QUEDA IGUAL (Ya funciona perfecto gracias a que Laravel manda totalFiltro) --}}
+            <div class="inline-flex flex-col items-end rounded-xl bg-emerald-50 px-5 py-2 border border-emerald-200">
+                <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest" x-text="tipoFiltro === 'dia' ? 'Total del Día' : (tipoFiltro === 'mes' ? 'Total del Mes' : 'Total Histórico')"></span>
+                <span class="text-xl font-black text-emerald-700" x-text="formatMoney(totalFiltro)"></span>
             </div>
+
         </div>
 
         {{-- GRID PRINCIPAL --}}
@@ -126,7 +140,9 @@
 
             {{-- TABLA DE HISTORIAL --}}
             <div class="lg:col-span-8">
-                <div class="rounded-2xl border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-sm sm:px-7.5 xl:pb-1">
+                <div class="rounded-2xl border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-sm sm:px-7.5 xl:pb-1 flex flex-col justify-between min-h-[500px]">
+
+                    {{-- Contenedor de la Tabla --}}
                     <div class="max-w-full overflow-x-auto">
                         <table class="w-full table-auto">
                             <thead>
@@ -173,6 +189,53 @@
                             </tbody>
                         </table>
                     </div>
+
+                    {{-- NUEVO: Controles de Paginación --}}
+                    <div class="flex items-center justify-between border-t border-slate-100 bg-white pt-4 pb-2 mt-4" x-show="pagination.last_page > 1">
+
+                        {{-- Vista para Escritorio --}}
+                        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                            <div>
+                                <p class="text-sm text-slate-500 font-bold">
+                                    Página <span class="font-black text-[#1E55AA]" x-text="pagination.current_page"></span> de <span class="font-black text-[#1E55AA]" x-text="pagination.last_page"></span>
+                                </p>
+                            </div>
+                            <div>
+                                <nav class="isolate inline-flex -space-x-px rounded-xl shadow-sm" aria-label="Pagination">
+                                    <template x-for="(link, index) in pagination.links" :key="index">
+                                        <button
+                                            @click="if(link.url) cargarDatos(link.url)"
+                                            x-html="link.label"
+                                            :disabled="!link.url"
+                                            class="relative inline-flex items-center px-4 py-2 text-sm font-bold transition-colors focus:z-20 first:rounded-l-xl last:rounded-r-xl border"
+                                            :class="[
+                                                link.active
+                                                    ? 'z-10 bg-[#1E55AA] text-white border-[#1E55AA] focus-visible:outline-[#1E55AA]'
+                                                    : 'text-[#1E55AA] border-slate-200 hover:bg-[#F4F8FC] focus:outline-offset-0',
+                                                !link.url ? 'opacity-40 cursor-not-allowed bg-slate-50 text-slate-400 hover:bg-slate-50' : ''
+                                            ]"
+                                        ></button>
+                                    </template>
+                                </nav>
+                            </div>
+                        </div>
+
+                        {{-- Vista para Móviles --}}
+                        <div class="flex flex-1 justify-between sm:hidden w-full">
+                            <button @click="if(pagination.links.url) cargarDatos(pagination.links.url)"
+                                    :disabled="!pagination.links.url"
+                                    class="relative inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[#1E55AA] hover:bg-[#F4F8FC] disabled:opacity-40 disabled:cursor-not-allowed">
+                                Anterior
+                            </button>
+                            <button @click="if(pagination.links[pagination.links.length - 1].url) cargarDatos(pagination.links[pagination.links.length - 1].url)"
+                                    :disabled="!pagination.links[pagination.links.length - 1].url"
+                                    class="relative ml-3 inline-flex items-center rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-[#1E55AA] hover:bg-[#F4F8FC] disabled:opacity-40 disabled:cursor-not-allowed">
+                                Siguiente
+                            </button>
+                        </div>
+                    </div>
+                    {{-- FIN Controles de Paginación --}}
+
                 </div>
             </div>
 

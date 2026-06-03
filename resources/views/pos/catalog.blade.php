@@ -1,14 +1,4 @@
 {{-- Botones de Modo --}}
-<div class="flex justify-end gap-3 mb-2">
-    <button @click="toggleMode('edit')" :class="activeMode === 'edit' ? 'bg-[#FFE63C] text-[#1E55AA] border-transparent shadow-md' : 'bg-white text-[#1E55AA] border-[#1E55AA]/20 hover:border-[#1E55AA] hover:bg-[#F4F8FC]'" class="px-6 py-3 rounded-xl border-2 text-sm font-extrabold transition-all flex items-center gap-2 shadow-sm active:scale-95">
-        <svg x-show="activeMode !== 'edit'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
-        <span x-text="activeMode === 'edit' ? 'Terminar Edición' : 'Editar'"></span>
-    </button>
-    <button @click="toggleMode('delete')" :class="activeMode === 'delete' ? 'bg-rose-500 text-white border-transparent shadow-md' : 'bg-white text-rose-500 border-rose-200 hover:border-rose-500 hover:bg-rose-50'" class="px-6 py-3 rounded-xl border-2 text-sm font-extrabold transition-all flex items-center gap-2 shadow-sm active:scale-95">
-        <svg x-show="activeMode !== 'delete'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-        <span x-text="activeMode === 'delete' ? 'Terminar Eliminación' : 'Eliminar'"></span>
-    </button>
-</div>
 
 {{-- Servicios --}}
 <section>
@@ -23,10 +13,6 @@
                 <span class="text-xl font-extrabold text-[#1E55AA]/70 z-10" x-text="formatMoney(item.price)"></span>
             </button>
         </template>
-        <button x-show="activeMode === 'edit'" @click="openAddModal('services')" class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-[#1E55AA]/30 text-[#1E55AA] bg-white hover:bg-[#F4F8FC] transition-colors active:scale-95">
-            <div class="p-2 bg-[#1E55AA]/10 rounded-full mb-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg></div>
-            <span class="font-bold text-sm">Añadir Servicio</span>
-        </button>
     </div>
 </section>
 
@@ -58,10 +44,6 @@
 
         </template>
 
-        <button x-show="activeMode === 'edit'" @click="openAddModal('supplies')" class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-[#FFE63C] text-[#1E55AA] bg-white hover:bg-[#FFE63C]/10 transition-colors active:scale-95">
-            <div class="p-2 bg-[#FFE63C]/20 rounded-full mb-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg></div>
-            <span class="font-bold text-sm">Añadir Insumo</span>
-        </button>
     </div>
 </section>
 
@@ -78,9 +60,6 @@
                 <span class="text-xl font-extrabold text-emerald-600 z-10" x-text="formatMoney(item.price)"></span>
             </button>
         </template>
-        <button x-show="activeMode === 'edit'" @click="openAddModal('subscriptions')" class="flex flex-col items-center justify-center p-5 rounded-2xl border-2 border-dashed border-emerald-300 text-emerald-600 bg-white hover:bg-emerald-50 transition-colors active:scale-95">
-            <div class="p-2 bg-emerald-100 rounded-full mb-2"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 4v16m8-8H4"/></svg></div>
-            <span class="font-bold text-sm">Añadir Plan</span>
-        </button>
+
     </div>
 </section>
