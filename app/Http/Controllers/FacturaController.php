@@ -113,6 +113,12 @@ class FacturaController extends Controller
                 $request->payment_form, 
                 $request->payment_method
             );
+
+            // Guardamos el ID de Facturapi en la venta
+            $ventaId = json_decode($request->venta_data)->id;
+            \App\Models\Sale::where('id', $ventaId)->update([
+                'facturapi_id' => $factura->id
+            ]);
             
             // URL de descarga directa para evitar login de Facturapi
             //$pdfUrl = "https://www.facturapi.io/v2/invoices/{$factura->id}/pdf";
