@@ -173,7 +173,16 @@ class CajaController extends Controller
         // Traemos las ventas completas del turno (no sus items)
         $ventas = DB::table('sales')
             ->whereBetween('created_at', [$inicioTurno, $finTurno])
-            ->select('reference', 'total')
+            ->where(function ($query) {
+                $query->whereNull('facturapi_id')
+                    ->orWhere('facturapi_id', '');
+            })
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('sale_items')
+                    ->whereColumn('sale_items.sale_id', 'sales.id');
+            })
+            ->select('id', 'reference', 'total')
             ->get();
 
         if ($ventas->isEmpty()) {
@@ -213,13 +222,27 @@ class CajaController extends Controller
                 'PPD'
             );
 
+            // Asignamos el ID de Facturapi a cada venta incluida en la factura
+            $idsVentas = $ventas->pluck('id')->toArray();
+            DB::table('sales')
+                ->whereIn('id', $idsVentas)
+                ->update(['facturapi_id' => $factura->id]);
+
+            /*Código funcional comentado por pruebas    
             $apiKey   = config('services.facturapi.key');
             $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
-                ->get("https://www.facturapi.io/v2/invoices/{$factura->id}/pdf");
+                ->get("https://www.facturapi.io/v2/invoices/{$factura->id}/zip");
 
             return response($response->body(), 200, [
-                'Content-Type'        => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="factura_global_' . now()->format('Y-m-d') . '.pdf"',
+                'Content-Type'        => 'application/zip',
+                'Content-Disposition' => 'attachment; filename="factura_global_' . now()->format('Y-m-d') . '.zip"',
+            ]);*/
+
+            // Devolvemos JSON con el ID para que el JS construya los enlaces
+            return response()->json([
+                'success'     => true,
+                'factura_id'  => $factura->id,
+                'ventas_count' => count($idsVentas)
             ]);
 
         } catch (\Exception $e) {

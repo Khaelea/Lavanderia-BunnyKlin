@@ -25,7 +25,7 @@ class CatalogoService
                 'clave_prodserv' => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                 'price'          => $datos['price'],
                 'stock'          => $datos['stock'] ?? 0,
-                'unit'           => $datos['unit'] ?? 'Pza',
+                'unit'           => $datos['unit'] ?? 'H87',
                 'is_active'      => $datos['is_active'] ?? true,
             ]),
 
@@ -64,7 +64,7 @@ class CatalogoService
                     'clave_prodserv' => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                     'price'          => $datos['price'],
                     'stock'          => $datos['stock'] ?? 0,
-                    'unit'           => $datos['unit'] ?? 'Pza',
+                    'unit'           => $datos['unit'] ?? 'H87',
                     'is_active'       => $datos['is_active'] ?? true,
                 ]);
             }),
