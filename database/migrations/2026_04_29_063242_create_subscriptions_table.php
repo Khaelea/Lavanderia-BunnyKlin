@@ -15,6 +15,7 @@ return new class () extends Migration {
             $table->string('name', 100);
             $table->decimal('price', 10, 2);
             $table->smallInteger('duration_months');
+            $table->decimal('kilos_per_month', 8, 2)->default(0);
             $table->text('description')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();

@@ -1,4 +1,4 @@
-function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
+function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
     const adaptarCatalogo = (data, category) => {
         return (data || []).map((item) => ({
             id: item.id,
@@ -10,6 +10,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             stock: item.stock || null,
             unit: item.unit || null,
             duration_months: item.duration_months || null,
+            kilos_per_month: item.kilos_per_month || null,
             clave_prodserv: item.clave_prodserv || null,
             is_active: item.is_active ? true : false,
             is_for_orders: item.is_for_orders ? true : false,
@@ -33,16 +34,26 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             stock: 0,
             unit: "",
             duration_months: 1,
+            kilos_per_month: 0,
             is_active: true,
             is_for_orders: false,
         },
 
-        clienteForm: { nombre: "", telefono: "", inicio: "", fin: "" },
+        clienteForm: {
+            tipoRegistro: "nuevo",
+            cliente_id: "",
+            cliente_texto: "",
+            nombre: "",
+            telefono: "",
+            email: "",
+            inicio: new Date().toISOString().split("T")[0],
+            fin: "",
+        },
 
         services: adaptarCatalogo(servicesDb, "services"),
         supplies: adaptarCatalogo(suppliesDb, "supplies"),
         subscriptions: adaptarCatalogo(subscriptionsDb, "subscriptions"),
-        extras: adaptarCatalogo(extrasDb, "extras"),
+        clients: clientsDb || [],
         cart: [],
 
         toggleMode(mode) {
@@ -68,6 +79,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: 0,
                 unit: "",
                 duration_months: 1,
+                kilos_per_month: 0,
                 is_active: true,
                 is_for_orders: false,
             };
@@ -86,6 +98,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                kilos_per_month: item.kilos_per_month || 0,
                 is_for_orders: item.is_for_orders ? true : false,
                 is_active: item.is_active ? true : false,
             };
@@ -104,6 +117,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                kilos_per_month: item.kilos_per_month || 0,
                 is_active: item.is_active ? true : false,
                 is_for_orders: item.is_for_orders ? true : false,
             };
@@ -122,6 +136,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                kilos_per_month: item.kilos_per_month || 0,
                 is_active: item.is_active ? true : false,
                 is_for_orders: item.is_for_orders ? true : false,
             };
@@ -147,6 +162,8 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: this.itemModal.stock,
                 unit: this.itemModal.unit,
                 duration_months: this.itemModal.duration_months,
+                kilos_per_month:
+                    parseFloat(this.itemModal.kilos_per_month) || 0,
                 is_active: this.itemModal.is_active,
                 is_for_orders: this.itemModal.is_for_orders ? true : false,
             };
@@ -230,6 +247,8 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         targetList[idx].unit = data.item.unit || null;
                         targetList[idx].duration_months =
                             data.item.duration_months || null;
+                        targetList[idx].kilos_per_month =
+                            data.item.kilos_per_month || null;
                         targetList[idx].is_active = data.item.is_active
                             ? true
                             : false;
@@ -421,15 +440,45 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
 
         async confirmarCheckout() {
             try {
-                // Preparamos los datos para Laravel
-                const payload = {
+                let clientIdForSale = null;
+                const hasSubscription = this.cart.some(
+                    (item) => item.category === "subscriptions",
+                );
+
+                // --- 1. LÓGICA DE CLIENTES (Base de Datos Real) ---
+                if (hasSubscription) {
+                    // Validaciones de UI
+                    if (
+                        this.clienteForm.tipoRegistro === "nuevo" &&
+                        !this.clienteForm.nombre.trim()
+                    ) {
+                        alert("Por favor ingresa el nombre del cliente.");
+                        return;
+                    }
+                    if (
+                        this.clienteForm.tipoRegistro === "existente" &&
+                        !this.clienteForm.cliente_id
+                    ) {
+                        alert(
+                            "Por favor selecciona un cliente válido de la lista.",
+                        );
+                        return;
+                    }
+
+                    // Pausamos la venta y mandamos a guardar al cliente
+                    clientIdForSale = await this.procesarClientePOS();
+                }
+
+                // --- 2. LÓGICA DE LA VENTA ---
+                // Preparamos el payload añadiendo el ID del cliente que nos acaba de devolver la BD
+                const payloadVenta = {
+                    client_id: clientIdForSale, // <-- NUEVO: Asociamos la venta
                     total: this.total,
                     metodo_pago: "Efectivo",
                     detalles: this.cart,
                 };
 
-                // Enviamos la petición al servidor
-                const response = await fetch("/ventas/checkout", {
+                const responseVenta = await fetch("/ventas/checkout", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -438,79 +487,146 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                             .querySelector('meta[name="csrf-token"]')
                             .getAttribute("content"),
                     },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payloadVenta),
                 });
 
-                if (!response.ok) {
-                    const errorCrudo = await response.text();
-                    console.error("🚨 ERROR LARAVEL:", errorCrudo);
+                if (!responseVenta.ok) {
+                    const errorCrudo = await responseVenta.text();
+                    console.error("🚨 ERROR LARAVEL (Venta):", errorCrudo);
                     throw new Error(
                         "Error al guardar la venta en la base de datos",
                     );
                 }
 
-                // Recibimos la Venta confirmada desde Laravel (con el Folio real generado)
-                const data = await response.json();
+                const dataVenta = await responseVenta.json();
 
-                // Actualizamos la última venta para el ticket en pantalla
+                // --- 3. FINALIZAR (Ticket y Limpieza) ---
                 this.ultimaVenta = {
-                    folio: data.venta.reference, // Usamos la referencia que generó Laravel
+                    folio: dataVenta.venta.reference,
                     fecha: new Date().toLocaleString("es-MX", {
                         timeZone: "America/Mexico_City",
                     }),
-                    total: data.venta.total,
+                    total: dataVenta.venta.total,
                 };
 
-                // --- LÓGICA DE CLIENTES (Se mantiene en LocalStorage por ahora) ---
-                if (this.clienteForm.nombre.trim() !== "") {
-                    let subscripcionComprada = this.cart.find(
-                        (item) => item.category === "subscriptions",
-                    );
-                    let planName = subscripcionComprada
-                        ? subscripcionComprada.name
-                        : "Ninguna";
-                    let prendas = this.cart
-                        .filter((i) => i.category === "services")
-                        .map((i) => i.quantity + "x " + i.name)
-                        .join(", ");
-
-                    let clientes =
-                        JSON.parse(
-                            localStorage.getItem(
-                                "lavanderia_clientes_final_v2",
-                            ),
-                        ) || [];
-                    clientes.unshift({
-                        id: Date.now(),
-                        name: this.clienteForm.nombre,
-                        phone: this.clienteForm.telefono,
-                        items: prendas || "Solo pago de plan",
-                        status: "Pendiente",
-                        subscription: planName,
-                        subscriptionEndDate:
-                            planName !== "Ninguna" ? this.clienteForm.fin : "",
-                    });
-                    localStorage.setItem(
-                        "lavanderia_clientes_final_v2",
-                        JSON.stringify(clientes),
-                    );
-                }
-                // ------------------------------------------------------------------
-
-                // Mostramos el ticket de éxito
+                // Cambiamos de pantalla en el modal
                 this.showPreConfirmacion = false;
                 this.showConfirmacion = true;
 
-                // Limpiamos el carrito
+                // Limpiamos la UI
                 this.clearCart();
+
+                // Reiniciamos el formulario de clientes para la siguiente venta
+                this.clienteForm = {
+                    tipoRegistro: "nuevo",
+                    cliente_id: "",
+                    cliente_texto: "",
+                    nombre: "",
+                    telefono: "",
+                    email: "",
+                    inicio: new Date().toISOString().split("T")[0],
+                    fin: "",
+                };
             } catch (error) {
                 console.error(error);
-                alert("Hubo un problema al procesar el cobro.");
+                alert(
+                    error.message || "Hubo un problema al procesar el cobro.",
+                );
             }
         },
 
         cerrarConfirmacion() {
             this.showConfirmacion = false;
+        },
+
+        async procesarClientePOS() {
+            // 1. Buscamos la suscripción en el carrito
+            const subItem = this.cart.find(
+                (item) => item.category === "subscriptions",
+            );
+
+            let payload = {};
+
+            // 2. Construimos el payload dependiendo de si es nuevo o existente
+            if (this.clienteForm.tipoRegistro === "nuevo") {
+                payload = {
+                    name: this.clienteForm.nombre,
+                    phone: this.clienteForm.telefono,
+                    email: this.clienteForm.email,
+                    subscription_id: subItem ? subItem.id : null,
+                    start_subscription: this.clienteForm.inicio,
+                    wantsBilling: false,
+                };
+            } else {
+                // Buscamos el cliente original en memoria para reenviar sus datos requeridos
+                const clienteExistente = this.clients.find(
+                    (c) => c.id === parseInt(this.clienteForm.cliente_id),
+                );
+
+                payload = {
+                    name: clienteExistente.name,
+                    phone: clienteExistente.phone,
+                    email: clienteExistente.email,
+                    subscription_id: subItem ? subItem.id : null,
+                    start_subscription: this.clienteForm.inicio,
+                    wantsBilling: false,
+                };
+            }
+
+            const url =
+                this.clienteForm.tipoRegistro === "nuevo"
+                    ? "/api/clientes"
+                    : `/api/clientes/${this.clienteForm.cliente_id}`;
+
+            const method =
+                this.clienteForm.tipoRegistro === "nuevo" ? "POST" : "PUT";
+
+            // 3. Enviamos a Laravel
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                console.error("Error en validación del cliente:", err);
+                throw new Error(
+                    "No se pudo guardar la información del cliente. Verifica los datos.",
+                );
+            }
+
+            const data = await response.json();
+
+            // 4. Actualizamos el cliente en la memoria local (opcional, para que el datalist esté fresco)
+            if (this.clienteForm.tipoRegistro === "nuevo") {
+                this.clients.unshift(data.client);
+            }
+
+            // 5. Retornamos el ID para atarlo al ticket de venta
+            return data.client.id;
+        },
+
+        vincularClienteId() {
+            // Buscamos si el texto exacto del input coincide con algún cliente de nuestra lista
+            const clienteEncontrado = this.clients.find((c) => {
+                const formatoTexto =
+                    c.name + " (" + (c.phone || "Sin tel") + ")";
+                return formatoTexto === this.clienteForm.cliente_texto;
+            });
+
+            // Si lo encuentra, guardamos el ID real. Si borran o escriben mal, lo ponemos en null
+            if (clienteEncontrado) {
+                this.clienteForm.cliente_id = clienteEncontrado.id;
+            } else {
+                this.clienteForm.cliente_id = "";
+            }
         },
     };
 }

@@ -27,10 +27,6 @@ return new class () extends Migration {
             $table->string('ciudad')->nullable();
             $table->string('estado')->nullable();
 
-            // --- Suscripción ---
-            $table->foreignId('subscription_id')->nullable()->constrained('subscriptions')->nullOnDelete();
-            $table->date('end_subscription')->nullable();
-
             // --- Datos Fiscales ---
             $table->string('rfc', 14)->nullable();
             $table->string('razon_social')->nullable();

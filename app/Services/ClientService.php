@@ -19,12 +19,10 @@ class ClientService
 
             // 1. Lógica de Facturación y Direcciones
             if (empty($datos['wantsBilling']) || $datos['wantsBilling'] == false) {
-                // Si NO factura, limpiamos todo lo fiscal
                 $datos['rfc'] = null;
                 $datos['razon_social'] = null;
                 $datos['regimen_fiscal'] = null;
                 $datos['same_billing_address'] = false;
-
                 $datos['fiscal_codigo_postal'] = null;
                 $datos['fiscal_calle'] = null;
                 $datos['fiscal_numero_exterior'] = null;
@@ -32,9 +30,7 @@ class ClientService
                 $datos['fiscal_colonia'] = null;
                 $datos['fiscal_ciudad'] = null;
                 $datos['fiscal_estado'] = null;
-
             } else {
-                // Si SÍ factura y marcó que usa la misma dirección
                 if (!empty($datos['same_billing_address']) && $datos['same_billing_address'] == true) {
                     $datos['fiscal_codigo_postal']   = $datos['codigo_postal'] ?? null;
                     $datos['fiscal_calle']           = $datos['calle'] ?? null;
@@ -46,33 +42,56 @@ class ClientService
                 }
             }
 
-            // 2. CÁLCULO DE LA SUSCRIPCIÓN CON PHP (Carbon)
-            if (!empty($datos['subscription_id']) && !empty($datos['start_subscription'])) {
-                $suscripcion = Subscription::query()->find($datos['subscription_id']);
+            // 2. Extraemos los datos de suscripción para que no choquen con la tabla de clientes
+            $subId = $datos['subscription_id'] ?? null;
+            $subStart = $datos['start_subscription'] ?? null;
+            unset($datos['subscription_id'], $datos['start_subscription'], $datos['wantsBilling']);
 
-                if ($suscripcion) {
-                    // Convertimos la fecha de inicio a Carbon
-                    $fechaInicio = Carbon::parse($datos['start_subscription']);
-
-                    // addMonthsNoOverflow evita errores como: 31 Enero + 1 mes = 3 Marzo.
-                    // Lo ajustará correctamente al 28 de Febrero.
-                    $datos['end_subscription'] = $fechaInicio->addMonthsNoOverflow($suscripcion->duration_months)->toDateString();
-                }
-            } else {
-                $datos['end_subscription'] = null;
-            }
-
-            // 3. Limpiamos el campo virtual 'start_subscription' para que Eloquent no
-            // intente guardarlo en la base de datos (ya que no existe esa columna en clients)
-            unset($datos['start_subscription']);
-
-            // 4. Guardamos
+            // 3. Guardamos el cliente primero
             if ($client) {
                 $client->update($datos);
-                return $client;
+            } else {
+                $client = Client::query()->create($datos);
             }
 
-            return Client::query()->create($datos);
+            // 4. LÓGICA DE LA NUEVA ARQUITECTURA DE SUSCRIPCIONES
+            if ($subId && $subStart) {
+                $suscripcion = \App\Models\Subscription::query()->find($subId);
+
+                if ($suscripcion) {
+                    $fechaInicio = \Carbon\Carbon::parse($subStart);
+                    // Calculamos el fin del contrato total (ej. 6 meses)
+                    $fechaFinContrato = $fechaInicio->copy()->addMonthsNoOverflow($suscripcion->duration_months);
+
+                    // A) Opcional: Si el cliente tenía un contrato activo viejo, lo cancelamos para evitar duplicados
+                    $client->clientSubscriptions()->where('status', 'active')->update(['status' => 'canceled']);
+
+                    // B) Creamos el nuevo contrato en client_subscriptions
+                    $contrato = $client->clientSubscriptions()->create([
+                        'subscription_id' => $suscripcion->id,
+                        'start_date'      => $fechaInicio->toDateString(),
+                        'end_date'        => $fechaFinContrato->toDateString(),
+                        'status'          => 'active',
+                    ]);
+
+                    // C) Generamos su primer ciclo mensual (1 mes exacto)
+                    $cicloFin = $fechaInicio->copy()->addMonthNoOverflow();
+
+                    // (Por si el contrato durara menos de un mes, evitamos que el ciclo lo rebase)
+                    if ($cicloFin->greaterThan($fechaFinContrato)) {
+                        $cicloFin = $fechaFinContrato;
+                    }
+
+                    $contrato->cycles()->create([
+                        'cycle_start'    => $fechaInicio->toDateString(),
+                        'cycle_end'      => $cicloFin->toDateString(),
+                        'kilos_allowed'  => $suscripcion->kilos_per_month,
+                        'kilos_consumed' => 0, // Inicia con 0 kilos consumidos
+                    ]);
+                }
+            }
+
+            return $client;
         });
     }
 
