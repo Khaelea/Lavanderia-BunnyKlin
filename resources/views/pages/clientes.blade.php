@@ -146,23 +146,28 @@
 
                             {{-- Columna de Plan y Vigencia --}}
                             <td class="px-6 py-4">
+                                {{-- Nombre del Plan (Muestra el activo, o el último que expiró) --}}
                                 <p class="font-black text-[#1E55AA]" x-text="client.subscription_name || 'Sin suscripción'"></p>
 
                                 <template x-if="client.end_subscription">
                                     <div class="mt-1">
-                                        {{-- Si NO ha vencido (Vigente) --}}
-                                        <p x-show="!isExpired(client.end_subscription)"
-                                           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100 text-[11px] font-black text-emerald-600 tracking-wide uppercase">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                            <span x-text="'Vence el ' + formatDate(client.end_subscription)"></span>
-                                        </p>
 
-                                        {{-- Si YA venció (Expirado) --}}
-                                        <p x-show="isExpired(client.end_subscription)"
-                                           class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 border border-rose-100 text-[11px] font-black text-rose-600 tracking-wide uppercase">
-                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                                            <span x-text="'Venció el ' + formatDate(client.end_subscription)"></span>
-                                        </p>
+                                        {{-- ESCENARIO A: El contrato está Activo y Vigente --}}
+                                        <template x-if="client.has_active_subscription">
+                                            <p class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-50 border border-emerald-100 text-[11px] font-black text-emerald-600 tracking-wide uppercase">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                                <span x-text="'Vence el ' + formatDate(client.end_subscription)"></span>
+                                            </p>
+                                        </template>
+
+                                        {{-- ESCENARIO B: El contrato ya Caducó / Expiró --}}
+                                        <template x-if="!client.has_active_subscription">
+                                            <p class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-rose-50 border border-rose-100 text-[11px] font-black text-rose-600 tracking-wide uppercase">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                                <span x-text="'Venció el ' + formatDate(client.end_subscription)"></span>
+                                            </p>
+                                        </template>
+
                                     </div>
                                 </template>
                             </td>

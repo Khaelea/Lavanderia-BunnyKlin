@@ -6,7 +6,7 @@
 @endsection
 
 @section('content')
-<div x-data='posSystem(@json($services), @json($supplies), @json($subscriptions))' x-cloak class="font-nunito relative min-h-screen pb-12 bg-[#F4F8FC] text-[#1E55AA] selection:bg-[#FFE63C] selection:text-[#1E55AA]">
+<div x-data='posSystem(@json($services), @json($supplies), @json($subscriptions), @json($clients))' x-cloak class="font-nunito relative min-h-screen pb-12 bg-[#F4F8FC] text-[#1E55AA] selection:bg-[#FFE63C] selection:text-[#1E55AA]">
 
     {{-- Fondo Decorativo --}}
     <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

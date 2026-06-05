@@ -41,12 +41,14 @@ Route::get('/', function () {
         ->get();
     $supplies = Supply::query()->where('is_active', true)->get();
     $subscriptions = Subscription::query()->where('is_active', true)->get();
+    $clients = Client::query()->latest()->get();
 
     return view('pages.pos', [
         'title'         => 'Punto de Venta',
-        'services'     => $services,
-        'supplies'       => $supplies,
-        'subscriptions' => $subscriptions
+        'services'      => $services,
+        'supplies'      => $supplies,
+        'subscriptions' => $subscriptions,
+        'clients'       => $clients
     ]);
 })->name('pos');
 
@@ -70,7 +72,15 @@ Route::delete('/ventas/bulk', [SalesController::class, 'destroyBulk'])->name('ve
 Route::delete('/ventas/{id}', [SalesController::class, 'destroy'])->name('ventas.destroy');
 
 // Rutas para clientes
-Route::get('/api/clientes/init', [ClientController::class, 'apiInit']);
+Route::get('/api/clientes/init', function () {
+    $clients = Client::with(['currentSubscription.plan', 'latestSubscription.plan'])->latest()->get();
+    $subscriptions = Subscription::query()->where('is_active', true)->get();
+
+    return response()->json([
+        'clients' => $clients,
+        'subscriptions' => $subscriptions
+    ]);
+});
 Route::post('/api/clientes', [ClientController::class, 'store']);
 Route::put('/api/clientes/{client}', [ClientController::class, 'update']);
 Route::delete('/api/clientes/{client}', [ClientController::class, 'destroy']);
@@ -116,10 +126,7 @@ Route::get('/insumos', function () {
 
 Route::get('/suscripciones', function () {
     $subscriptions = Subscription::query()->latest()->get();
-    $totalSubscribedClients = Client::query()
-        ->whereNotNull('subscription_id')
-        ->where('end_subscription', '>=', now())
-        ->count();
+    $totalSubscribedClients = Client::query()->has('currentSubscription')->count();
     return view('pages.suscripciones', [
         'title' => 'Suscripciones',
         'subscriptions' => $subscriptions,
