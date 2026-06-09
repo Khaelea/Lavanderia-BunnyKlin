@@ -500,6 +500,26 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
                 const dataVenta = await responseVenta.json();
 
+                this.cart.forEach((itemCart) => {
+                    if (itemCart.category === "supplies") {
+                        // Buscamos el insumo original en nuestra lista
+                        const indexOriginal = this.supplies.findIndex(
+                            (s) => s.id === itemCart.id,
+                        );
+
+                        if (indexOriginal !== -1) {
+                            // Le restamos la cantidad que acabamos de vender
+                            this.supplies[indexOriginal].stock -=
+                                itemCart.quantity;
+
+                            // Medida de seguridad visual por si acaso
+                            if (this.supplies[indexOriginal].stock < 0) {
+                                this.supplies[indexOriginal].stock = 0;
+                            }
+                        }
+                    }
+                });
+
                 // --- 3. FINALIZAR (Ticket y Limpieza) ---
                 this.ultimaVenta = {
                     folio: dataVenta.venta.reference,

@@ -73,7 +73,10 @@ Route::delete('/ventas/{id}', [SalesController::class, 'destroy'])->name('ventas
 
 // Rutas para clientes
 Route::get('/api/clientes/init', function () {
-    $clients = Client::with(['currentSubscription.plan', 'latestSubscription.plan'])->latest()->get();
+    $clients = Client::with([
+        'currentSubscription.plan',
+        'currentSubscription.currentCycle'
+    ])->latest()->get();
     $subscriptions = Subscription::query()->where('is_active', true)->get();
 
     return response()->json([
