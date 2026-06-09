@@ -13,9 +13,10 @@ class OrderService
     {
         return DB::transaction(function () use ($datos, $order) {
 
-            // 1. Manejo del Cliente (Buscar por teléfono o crear uno anónimo)
-            $clientId = null;
-            if (!empty($datos['phone'])) {
+            // 1. MANEJO DEL CLIENTE
+            $clientId = $datos['client_id'] ?? null;
+
+            if (!$clientId && !empty($datos['phone'])) {
                 $client = Client::query()->firstOrCreate(
                     ['phone' => $datos['phone']],
                     ['name' => $datos['name'] ?: 'Cliente Mostrador']
@@ -23,49 +24,101 @@ class OrderService
                 $clientId = $client->id;
             }
 
+            // 2. OBTENER EL SERVICIO (Necesario para el SaleItem)
+            // Traemos el servicio de la base de datos para tomar su nombre y precio
+            $servicio = \App\Models\Service::query()->find($datos['service_id']);
+
+            // --- MODO EDICIÓN ---
             if ($order) {
-                // Modo EDICIÓN: Solo actualizamos la orden (y la venta si cambió el total)
                 $order->update([
-                    'client_id' => $clientId,
-                    'service_id' => $datos['service_id'],
-                    'quantity' => $datos['quantity'],
-                    'details' => $datos['details'] ?? null,
-                    'total_price' => $datos['total'],
+                    'client_id'       => $clientId,
+                    'service_id'      => $datos['service_id'],
+                    'quantity'        => $datos['quantity'],
+                    'details'         => $datos['details'] ?? null,
+                    'total_price'     => $datos['total'],
                     'advance_payment' => $datos['advance'] ?? 0,
-                    'status' => $datos['status'],
-                    'arrival_date' => $datos['arrivalDate'],
-                    'delivery_date' => $datos['deliveryDate'] ?? null,
+                    'status'          => $datos['status'],
+                    'arrival_date'    => $datos['arrivalDate'],
+                    'delivery_date'   => $datos['deliveryDate'] ?? null,
                 ]);
 
                 // Actualizamos la venta asociada
-                $order->sale()->update(['total' => $datos['total'], 'client_id' => $clientId]);
+                $order->sale()->update([
+                    'total' => $datos['total'],
+                    'client_id' => $clientId
+                ]);
+
+                // Actualizamos el renglón del ticket (SaleItem)
+                $saleItem = $order->sale->items()->first();
+                if ($saleItem && $servicio) {
+                    $saleItem->update([
+                        'item_type'      => \App\Models\Service::class,
+                        'item_id'        => $servicio->id,
+                        'name_snapshot'  => $servicio->name,
+                        'price_snapshot' => $servicio->price,
+                        'quantity'       => $datos['quantity'],
+                        'subtotal'       => $datos['total'],
+                    ]);
+                }
 
                 return $order;
             }
 
-            // Modo CREACIÓN:
-            // 2. Creamos la venta financiera asociada
+            // --- MODO CREACIÓN ---
+
+            // 3. Creamos la venta financiera (Cabecera del ticket)
+            // Nota: Al no pasar 'reference', el modelo Sale usará su método boot() para generar el folio 'BK-XXXX'
             $sale = Sale::query()->create([
-                'reference' => $datos['ticket'],
-                'client_id' => $clientId,
-                'total' => $datos['total'],
-                'payment_method' => 'Pendiente', // Se actualizará en el punto de venta
-                'status' => 'pendiente',
+                'client_id'      => $clientId,
+                'total'          => $datos['total'],
+                'payment_method' => 'Pendiente',
+                'status'         => 'pendiente',
             ]);
 
-            // 3. Creamos la orden operativa
-            return Order::query()->create([
-                'sale_id' => $sale->id,
-                'client_id' => $clientId,
-                'service_id' => $datos['service_id'],
-                'quantity' => $datos['quantity'],
-                'details' => $datos['details'] ?? null,
-                'total_price' => $datos['total'],
+            // 4. CREAMOS EL RENGLÓN DEL TICKET (SaleItem) 🚀
+            if ($servicio) {
+                $sale->items()->create([
+                    'item_type'      => \App\Models\Service::class,
+                    'item_id'        => $servicio->id,
+                    'name_snapshot'  => $servicio->name,
+                    'price_snapshot' => $servicio->price,
+                    'quantity'       => $datos['quantity'],
+                    // Usamos el total calculado en JS, ya que podría tener descuento de suscripción
+                    'subtotal'       => $datos['total'],
+                ]);
+            }
+
+            // 5. Creamos la orden operativa
+            $nuevaOrden = Order::query()->create([
+                'reference'       => $datos['reference'], // Este es el 'ORD-XXXX'
+                'sale_id'         => $sale->id,
+                'client_id'       => $clientId,
+                'service_id'      => $datos['service_id'],
+                'quantity'        => $datos['quantity'],
+                'details'         => $datos['details'] ?? null,
+                'total_price'     => $datos['total'],
                 'advance_payment' => $datos['advance'] ?? 0,
-                'status' => $datos['status'],
-                'arrival_date' => $datos['arrivalDate'],
-                'delivery_date' => $datos['deliveryDate'] ?? null,
+                'status'          => $datos['status'],
+                'arrival_date'    => $datos['arrivalDate'],
+                'delivery_date'   => $datos['deliveryDate'] ?? null,
             ]);
+
+            // 6. LÓGICA DE SUSCRIPCIÓN (DESCONTAR KILOS)
+            if ($clientId) {
+                $clienteDB = Client::query()->find($clientId);
+
+                if ($clienteDB && $clienteDB->currentSubscription && $clienteDB->currentSubscription->currentCycle) {
+                    $ciclo = $clienteDB->currentSubscription->currentCycle;
+                    $kilosRestantes = max(0, $ciclo->kilos_allowed - $ciclo->kilos_consumed);
+
+                    if ($kilosRestantes > 0) {
+                        $kilosAConsumir = min($datos['quantity'], $kilosRestantes);
+                        $ciclo->increment('kilos_consumed', $kilosAConsumir);
+                    }
+                }
+            }
+
+            return $nuevaOrden;
         });
     }
 

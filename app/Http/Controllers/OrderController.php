@@ -31,7 +31,7 @@ class OrderController extends Controller
     public function store(Request $request)
     {
         $datosValidados = $request->validate([
-            'ticket'       => 'required|string|unique:sales,reference', // Validamos contra sales
+            'client_id'    => 'nullable|exists:clients,id',
             'name'         => 'required|string',
             'phone'        => 'nullable|string',
             'service_id'   => 'required|exists:services,id',
@@ -43,6 +43,12 @@ class OrderController extends Controller
             'arrivalDate'  => 'required|date',
             'deliveryDate' => 'nullable|date',
         ]);
+
+        $ultimoEncargo = \App\Models\Order::query()->latest('id')->first();
+
+        $siguienteNumero = $ultimoEncargo ? $ultimoEncargo->id + 1 : 1;
+
+        $datosValidados['reference'] = 'ORD-' . str_pad($siguienteNumero, 5, '0', STR_PAD_LEFT);
 
         $order = $this->orderService->guardarOrden($datosValidados);
         $order->load(['client', 'sale']); // Cargamos relaciones

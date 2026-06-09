@@ -30,7 +30,8 @@ class Client extends Model
         'subscription_name',
         'subscription_id',
         'start_subscription',
-        'end_subscription'
+        'end_subscription',
+        'remaining_kilos'
     ];
 
     // --- ACCESOR (Campo virtual) ---
@@ -64,6 +65,21 @@ class Client extends Model
     public function getStartSubscriptionAttribute()
     {
         return $this->currentSubscription?->start_date;
+    }
+
+    public function getRemainingKilosAttribute(): float
+    {
+        if (!$this->currentSubscription) {
+            return 0.0;
+        }
+
+        $cicloActual = $this->currentSubscription->currentCycle;
+
+        if (!$cicloActual) {
+            return 0.0;
+        }
+
+        return (float) max(0, $cicloActual->kilos_allowed - $cicloActual->kilos_consumed);
     }
 
     // --- RELACIONES ---
