@@ -12,6 +12,15 @@
             </h1>
         </div>
         <div class="flex gap-3">
+            {{-- BOTÓN CONFIGURACIÓN --}}
+            <button onclick="toggleConfig(true)"
+                class="bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-600 font-medium text-sm py-2.5 px-4 rounded-xl shadow-sm transition flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Configuración
+            </button>
             {{-- BOTÓN FACTURA GLOBAL --}}
             <button onclick="toggleFacturaGlobal(true)" 
                 class="bg-white border border-blue-200 hover:border-blue-400 hover:bg-blue-50 text-blue-700 font-medium text-sm py-2.5 px-5 rounded-xl shadow-sm transition flex items-center gap-2">
@@ -135,7 +144,7 @@
                 <div class="space-y-3.5">
                     <div class="flex justify-between text-sm">
                         <span class="text-slate-500">Fondo inicial</span>
-                        <span class="font-medium text-slate-800">${{ number_format($fondoInicial ?? 500, 2) }}</span>
+                        <span class="font-medium text-slate-800" id="txt-fondo-inicial">${{ number_format($fondoInicial ?? 0, 2) }}</span>
                     </div>
                     <div class="flex justify-between text-sm">
                         <span class="text-slate-500">Ingresos efectivo</span>
@@ -414,6 +423,237 @@
     </div>
 </div>
 
+{{-- HISTORIAL DE CORTES --}}
+<div class="bg-white rounded-2xl shadow-xs border border-slate-100 mt-6 overflow-hidden">
+    <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+        <h2 class="text-sm font-bold text-blue-900 uppercase tracking-wider flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+            </svg>
+            Historial de Cortes
+        </h2>
+        <span class="text-xs text-slate-400">Últimos 10 registros</span>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="bg-slate-50 text-left border-b border-slate-100">
+                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">Folio</th>
+                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide">Fecha y Hora</th>
+                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide text-center">Diferencia</th>
+                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide text-center">Factura</th>
+                    <th class="px-4 py-3 text-xs font-bold text-slate-500 uppercase tracking-wide text-center">Detalle</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-50">
+                @forelse($historialCortes as $corte)
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="px-4 py-3 font-mono text-xs font-bold text-blue-700">
+                        {{ $corte->folio }}
+                    </td>
+                    <td class="px-4 py-3 text-slate-600 text-xs">
+                        {{ $corte->fecha_cierre->format('d/m/Y H:i') }}
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        @php $diff = $corte->diferencia; @endphp
+                        @if(abs($diff) < 0.01)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700">Cuadrada</span>
+                        @elseif($diff > 0)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700">+${{ number_format($diff, 2) }}</span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-rose-50 text-rose-700">-${{ number_format(abs($diff), 2) }}</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        @if($corte->facturado)
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">Realizada</span>
+                        @else
+                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Pendiente</span>
+                        @endif
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <button onclick='abrirDetalle(@json($corte->load(["gastos", "retiros"])))'
+                            class="text-blue-600 hover:text-blue-800 text-xs font-medium hover:underline transition">
+                            Ver detalle
+                        </button>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5" class="px-4 py-10 text-center text-slate-400 text-sm">
+                        No hay cortes registrados aún.
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+</div>
+
+{{-- MODAL: DETALLE DEL CORTE --}}
+<div id="modal-detalle-corte" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl w-full max-w-md shadow-xl m-4 border border-slate-100 max-h-[90vh] flex flex-col">
+
+        <div class="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Detalle del Corte — <span id="d-folio" class="text-blue-700 font-mono ml-1"></span>
+            </h3>
+            <button onclick="cerrarDetalle()" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+        </div>
+
+        {{-- BODY CON SCROLL --}}
+        <div class="p-5 space-y-4 overflow-y-auto max-h-[65vh]">
+
+            {{-- FECHA --}}
+            <div class="flex justify-between text-sm border-b border-slate-50 pb-2">
+                <span class="text-slate-500">Fecha y hora de cierre</span>
+                <span id="d-fecha" class="font-medium text-slate-800"></span>
+            </div>
+
+            {{-- RESUMEN FINANCIERO --}}
+            <div class="bg-slate-50 rounded-xl p-4 space-y-2.5">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-1">Resumen financiero</p>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">Fondo inicial</span>
+                    <span id="d-fondo" class="font-medium text-slate-700"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">Total ingresos</span>
+                    <span id="d-ingresos" class="font-medium text-emerald-600"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">Gastos operativos</span>
+                    <span id="d-gastos" class="font-medium text-rose-500"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">Retiros autorizados</span>
+                    <span id="d-retiros" class="font-medium text-rose-500"></span>
+                </div>
+            </div>
+
+            {{-- MOVIMIENTOS: GASTOS --}}
+            <div id="d-bloque-gastos" class="hidden">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Detalle de Gastos</p>
+                <div id="d-lista-gastos" class="space-y-1.5"></div>
+            </div>
+
+            {{-- MOVIMIENTOS: RETIROS --}}
+            <div id="d-bloque-retiros" class="hidden">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Detalle de Retiros</p>
+                <div id="d-lista-retiros" class="space-y-1.5"></div>
+            </div>
+
+            {{-- ARQUEO --}}
+            <div class="bg-blue-50 rounded-xl p-4 space-y-2.5 border border-blue-100">
+                <p class="text-xs font-bold text-blue-400 uppercase tracking-wide mb-1">Arqueo de caja</p>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">Efectivo esperado</span>
+                    <span id="d-esperado" class="font-medium text-slate-700"></span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-slate-500">Efectivo contado</span>
+                    <span id="d-contado" class="font-medium text-slate-700"></span>
+                </div>
+                <div class="flex justify-between text-sm border-t border-blue-100 pt-2">
+                    <span class="text-slate-500 font-medium">Diferencia</span>
+                    <span id="d-diferencia" class="font-bold"></span>
+                </div>
+            </div>
+
+            {{-- FACTURA --}}
+            <div class="flex justify-between items-center text-sm">
+                <span class="text-slate-500">Estado de factura global</span>
+                <span id="d-factura" class="font-medium"></span>
+            </div>
+
+        </div>
+
+        <div class="px-5 pb-5 pt-3 border-t border-slate-100">
+            <button onclick="cerrarDetalle()"
+                class="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-sm font-medium rounded-xl transition">
+                Cerrar
+            </button>
+        </div>
+    </div>
+</div>
+
+{{-- MODAL: CONFIGURACIÓN DE CAJA --}}
+<div id="modal-config" class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center z-50 hidden">
+    <div class="bg-white rounded-2xl w-full max-w-sm shadow-xl m-4 border border-slate-100 max-h-[90vh] flex flex-col">
+
+        <div class="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+            <h3 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                </svg>
+                Configuración de Caja
+            </h3>
+            <button type="button" onclick="toggleConfig(false)" class="text-slate-400 hover:text-slate-600 text-lg">&times;</button>
+        </div>
+
+        <div class="p-5 space-y-4 overflow-y-auto max-h-[65vh]">
+
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Fondo Inicial de Caja ($)</label>
+                <div class="relative">
+                    <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
+                    <input type="number" id="config-fondo-input" min="0" step="0.01"
+                        value="{{ $fondoInicial }}"
+                        class="w-full border border-slate-200 rounded-xl pl-7 pr-4 py-2 text-sm font-mono focus:outline-none focus:border-blue-500">
+                </div>
+                <p class="text-xs text-slate-400 mt-1.5">Este es el dinero con el que inicia la caja cada turno.</p>
+            </div>
+
+            <div class="border-t border-slate-100 pt-4 space-y-3">
+                <p class="text-xs font-semibold text-slate-400 uppercase tracking-wide">Datos del Negocio</p>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre del Negocio</label>
+                    <input type="text" id="config-nombre"
+                        value="{{ $config->nombre_negocio }}"
+                        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Dirección</label>
+                    <input type="text" id="config-direccion"
+                        value="{{ $config->direccion }}"
+                        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Ciudad</label>
+                    <input type="text" id="config-ciudad"
+                        value="{{ $config->ciudad }}"
+                        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+                    <input type="text" id="config-telefono"
+                        value="{{ $config->telefono }}"
+                        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
+                </div>
+            </div>
+
+            <div id="config-mensaje" class="hidden text-xs text-center py-2 px-3 rounded-lg font-medium"></div>
+
+            <div class="flex justify-end gap-2.5 pt-1">
+                <button type="button" onclick="toggleConfig(false)"
+                    class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-medium rounded-lg transition">
+                    Cancelar
+                </button>
+                <button type="button" onclick="guardarConfig()"
+                    class="px-4 py-2 bg-blue-700 hover:bg-blue-800 text-white text-xs font-medium rounded-lg transition">
+                    Guardar cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {{-- JAVASCRIPT CON LOGICA COMPLETA --}}
 <script>
     let fondoInicial = parseFloat("{{ $fondoInicial ?? 500 }}") || 0;
@@ -449,6 +689,8 @@
 
         document.getElementById('balance-gastos-txt').innerText = "$" + formatter.format(totalGastosYRetiros);
         document.getElementById('balance-neto-txt').innerText = "$" + formatter.format(netoTurno);
+
+        document.getElementById('txt-fondo-inicial').innerText = "$" + formatter.format(fondoInicial);
 
         const domEsperado = document.getElementById('efectivo-esperado');
         if(domEsperado) {
@@ -594,6 +836,13 @@
         .then(response => response.blob())
         .then(blob => {
             const url = window.URL.createObjectURL(blob);
+            const a   = document.createElement('a');
+            a.href    = url;
+            a.download = 'corte_caja_{{ now()->format("Y-m-d_H-i") }}.pdf';
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
             
             //Código para descargar de manera automática el PDF generado, actualmente se abre en una nueva pestaña para que el usuario pueda revisar el contenido antes de descargarlo.
             /*const a = document.createElement('a');
@@ -604,12 +853,13 @@
             a.remove();
             window.URL.revokeObjectURL(url);*/
 
-            window.open(url, '_blank');
+            //window.open(url, '_blank');
 
             setTimeout(() => {
                 document.getElementById('modal-exito-cierre').classList.add('hidden');
                 document.getElementById('modal-cierre').classList.add('hidden');
-            }, 800);
+                window.location.reload();
+            }, 1500);
         })
         .catch(() => {
             alert('Ocurrió un error al generar el PDF. Intenta de nuevo.');
@@ -693,6 +943,136 @@
             estado.className  = 'text-xs text-center py-2 px-3 rounded-lg bg-rose-50 text-rose-600 font-medium';
             btnSubmit.disabled  = false;
             btnSubmit.innerText = 'Generar factura global';
+        });
+    }
+
+    function abrirDetalle(corte) {
+        const formatter = new Intl.NumberFormat('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const fmt = v => '$' + formatter.format(v);
+
+        document.getElementById('d-folio').innerText    = corte.folio;
+        document.getElementById('d-fecha').innerText    = corte.fecha_cierre;
+        document.getElementById('d-fondo').innerText    = fmt(corte.fondo_inicial);
+        document.getElementById('d-ingresos').innerText = fmt(corte.total_ingresos);
+        document.getElementById('d-gastos').innerText   = '-' + fmt(corte.total_gastos);
+        document.getElementById('d-retiros').innerText  = '-' + fmt(corte.total_retiros);
+        document.getElementById('d-esperado').innerText = fmt(corte.efectivo_esperado);
+        document.getElementById('d-contado').innerText  = fmt(corte.efectivo_contado);
+
+        // Diferencia con color
+        const diff   = parseFloat(corte.diferencia);
+        const diffEl = document.getElementById('d-diferencia');
+        if (Math.abs(diff) < 0.01) {
+            diffEl.innerText = '$0.00 (Cuadrada)';
+            diffEl.className = 'font-bold text-emerald-600';
+        } else if (diff > 0) {
+            diffEl.innerText = '+' + fmt(diff) + ' (Sobrante)';
+            diffEl.className = 'font-bold text-amber-600';
+        } else {
+            diffEl.innerText = '-' + fmt(Math.abs(diff)) + ' (Faltante)';
+            diffEl.className = 'font-bold text-rose-600';
+        }
+
+        // Estado factura
+        const facturaEl = document.getElementById('d-factura');
+        if (corte.facturado) {
+            facturaEl.innerHTML = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700">Realizada</span>';
+        } else {
+            facturaEl.innerHTML = '<span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-500">Pendiente</span>';
+        }
+
+        // Detalle de gastos
+        const bloqueGastos = document.getElementById('d-bloque-gastos');
+        const listaGastos  = document.getElementById('d-lista-gastos');
+        listaGastos.innerHTML = '';
+        if (corte.gastos && corte.gastos.length > 0) {
+            bloqueGastos.classList.remove('hidden');
+            corte.gastos.forEach(g => {
+                listaGastos.innerHTML += `
+                    <div class="flex justify-between items-center bg-rose-50 rounded-lg px-3 py-2 text-sm">
+                        <span class="text-slate-600">${g.concepto_o_responsable}</span>
+                        <span class="font-medium text-rose-600">-${fmt(g.monto)}</span>
+                    </div>`;
+            });
+        } else {
+            bloqueGastos.classList.add('hidden');
+        }
+
+        // Detalle de retiros
+        const bloqueRetiros = document.getElementById('d-bloque-retiros');
+        const listaRetiros  = document.getElementById('d-lista-retiros');
+        listaRetiros.innerHTML = '';
+        if (corte.retiros && corte.retiros.length > 0) {
+            bloqueRetiros.classList.remove('hidden');
+            corte.retiros.forEach(r => {
+                listaRetiros.innerHTML += `
+                    <div class="flex justify-between items-center bg-amber-50 rounded-lg px-3 py-2 text-sm">
+                        <span class="text-slate-600">${r.concepto_o_responsable}</span>
+                        <span class="font-medium text-amber-600">-${fmt(r.monto)}</span>
+                    </div>`;
+            });
+        } else {
+            bloqueRetiros.classList.add('hidden');
+        }
+
+        document.getElementById('modal-detalle-corte').classList.remove('hidden');
+    }
+
+    function cerrarDetalle() {
+        document.getElementById('modal-detalle-corte').classList.add('hidden');
+    }
+
+    function toggleConfig(show) {
+        const modal = document.getElementById('modal-config');
+        if (show) modal.classList.remove('hidden');
+        else modal.classList.add('hidden');
+    }
+
+    function guardarConfig() {
+        const mensaje      = document.getElementById('config-mensaje');
+        const nuevoFondo   = parseFloat(document.getElementById('config-fondo-input').value);
+
+        if (isNaN(nuevoFondo) || nuevoFondo < 0) {
+            mensaje.innerText = 'Ingresa un monto válido para el fondo.';
+            mensaje.className = 'text-xs text-center py-2 px-3 rounded-lg font-medium bg-rose-50 text-rose-600';
+            mensaje.classList.remove('hidden');
+            return;
+        }
+
+        fetch("{{ route('caja.actualizarFondo') }}", {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            },
+            body: JSON.stringify({
+                fondo_inicial: nuevoFondo,
+                nombre_negocio: document.getElementById('config-nombre').value,
+                direccion:      document.getElementById('config-direccion').value,
+                ciudad:         document.getElementById('config-ciudad').value,
+                telefono:       document.getElementById('config-telefono').value,
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                fondoInicial = data.fondo_inicial;
+                actualizarInterfazCaja();
+
+                mensaje.innerText = '✅ Configuración guardada correctamente.';
+                mensaje.className = 'text-xs text-center py-2 px-3 rounded-lg font-medium bg-emerald-50 text-emerald-700';
+                mensaje.classList.remove('hidden');
+
+                setTimeout(() => {
+                    mensaje.classList.add('hidden');
+                    toggleConfig(false);
+                }, 1500);
+            }
+        })
+        .catch(() => {
+            mensaje.innerText = 'Error al guardar. Intenta de nuevo.';
+            mensaje.className = 'text-xs text-center py-2 px-3 rounded-lg font-medium bg-rose-50 text-rose-600';
+            mensaje.classList.remove('hidden');
         });
     }
 </script>
