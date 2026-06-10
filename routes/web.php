@@ -68,15 +68,20 @@ Route::middleware(['auth'])->group(function () {
 
     // 1. SECCIÓN PRINCIPAL (Punto de Venta)
     Route::get('/', function () {
-        $services = Service::query()->where('is_active', true)->where('is_for_orders', false)->get();
+        $services = Service::query()
+            ->where('is_active', true)
+            ->where('is_for_orders', false)
+            ->get();
         $supplies = Supply::query()->where('is_active', true)->get();
         $subscriptions = Subscription::query()->where('is_active', true)->get();
+        $clients = Client::query()->latest()->get(); // Integrado de origin/main para Alpine.js
 
         return view('pages.pos', [
             'title'         => 'Punto de Venta',
             'services'      => $services,
             'supplies'      => $supplies,
-            'subscriptions' => $subscriptions
+            'subscriptions' => $subscriptions,
+            'clients'       => $clients
         ]);
     })->name('pos');
 
@@ -84,14 +89,24 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/ventas/checkout', [SalesController::class, 'store'])->name('ventas.checkout');
     Route::get('/ventas/api-historial', [SalesController::class, 'apiHistorial']);
     
-    // Clientes
-    Route::get('/api/clientes/init', [ClientController::class, 'apiInit']);
-    Route::get('/api/clientes', [ClienteController::class, 'index']); 
+    // Clientes API
+    Route::get('/api/clientes/init', function () {
+        $clients = Client::with([
+            'currentSubscription.plan',
+            'currentSubscription.currentCycle'
+        ])->latest()->get();
+        $subscriptions = Subscription::query()->where('is_active', true)->get();
+
+        return response()->json([
+            'clients' => $clients,
+            'subscriptions' => $subscriptions
+        ]);
+    });
     Route::post('/api/clientes', [ClientController::class, 'store']);
     Route::put('/api/clientes/{client}', [ClientController::class, 'update']);
     Route::delete('/api/clientes/{client}', [ClientController::class, 'destroy']);
 
-    // Órdenes/Pedidos
+    // Órdenes/Pedidos API
     Route::prefix('api/orders')->group(function () {
         Route::get('/init', [OrderController::class, 'apiInit']);
         Route::post('/', [OrderController::class, 'store']);
@@ -99,10 +114,11 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{order}', [OrderController::class, 'destroy']);
     });
 
+    // Vistas de Navegación Operativa
     Route::get('/historial', function () { return view('pages.historial', ['title' => 'Historial de Ventas']); })->name('historial');
     Route::get('/maquinas', function () { return view('pages.maquinas', ['title' => 'Máquinas IoT']); })->name('maquinas');
-
-    // 2. SECCIÓN LECTURA DE CATÁLOGOS E INVENTARIO
+    Route::get('/pedidos', function () { return view('pages.pedidos', ['title' => 'Pedidos y Encargos']); })->name('pedidos');
+    Route::get('/clientes', function () { return view('pages.clientes', ['title' => 'Clientes y Suscripciones']); })->name('clientes');
     Route::get('/catalogo', function () { return view('pages.catalogo', ['title' => 'Servicios y Productos']); })->name('catalogo');
     
     Route::get('/servicios', function () {
@@ -130,13 +146,13 @@ Route::middleware(['auth'])->group(function () {
         ]);
     })->name('suscripciones');
 
-    // 3. SECCIÓN OPERACIÓN Y CAJA
-    Route::get('/pedidos', function () { return view('pages.pedidos', ['title' => 'Pedidos y Encargos']); })->name('pedidos');
-    Route::get('/clientes', function () { return view('pages.clientes', ['title' => 'Clientes y Suscripciones']); })->name('clientes');
+    // Operaciones y Corte de Caja
     Route::get('/caja', [CajaController::class, 'corte'])->name('caja');
     Route::post('/caja/movimiento', [CajaController::class, 'movimiento'])->name('caja.movimiento');
     Route::post('/caja/generar-corte', [CajaController::class, 'generarCorte'])->name('caja.generarCorte');
     Route::post('/caja/factura-global', [CajaController::class, 'facturaGlobal'])->name('caja.facturaGlobal');
+    Route::put('/caja/configuracion/fondo', [CajaController::class, 'actualizarFondo'])->name('caja.actualizarFondo'); // Agregada de origin/main
+    
     Route::get('/newcalendar', [CalendarController::class, 'index'])->name('calendar.index');
 
     // 4. RUTAS DE FACTURACIÓN
@@ -190,6 +206,5 @@ Route::middleware(['auth'])->group(function () {
         Route::post('/catalogo/guardar', [CatalogoController::class, 'store'])->name('catalogo.store');
         Route::put('/catalogo/actualizar', [CatalogoController::class, 'update'])->name('catalogo.update');
         Route::delete('/catalogo/eliminar', [CatalogoController::class, 'destroy'])->name('catalogo.destroy');
-
     });
 });

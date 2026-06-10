@@ -57,7 +57,7 @@
                     <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
             </span>
-            <input type="text" x-model="searchQuery" placeholder="Buscar por ticket, nombre o teléfono..."
+            <input type="text" x-model="searchQuery" placeholder="Buscar por referencia, nombre o teléfono..."
                 class="w-full rounded-2xl border-2 border-slate-100 bg-white py-3.5 pl-12 pr-4 text-[#1E55AA] font-bold shadow-sm focus:border-[#1E55AA] focus:ring-4 focus:ring-[#1E55AA]/10 outline-none transition-all placeholder:text-[#1E55AA]/40">
         </div>
 
@@ -75,7 +75,7 @@
             <table class="w-full table-auto text-left whitespace-nowrap">
                 <thead>
                     <tr class="bg-[#F4F8FC] border-b border-[#1E55AA]/10">
-                        <th class="min-w-[180px] px-6 py-5 font-black text-[#1E55AA] uppercase tracking-wider text-sm">Ticket & Cliente</th>
+                        <th class="min-w-[180px] px-6 py-5 font-black text-[#1E55AA] uppercase tracking-wider text-sm">Folio & Cliente</th>
                         <th class="min-w-[200px] px-6 py-5 font-black text-[#1E55AA] uppercase tracking-wider text-sm">Detalles del Encargo</th>
                         <th class="min-w-[150px] px-6 py-5 font-black text-[#1E55AA] uppercase tracking-wider text-sm text-center">Entrega & Estado</th>
                         <th class="min-w-[150px] px-6 py-5 font-black text-[#1E55AA] uppercase tracking-wider text-sm text-center">Cobro</th>
@@ -87,7 +87,7 @@
                         <tr class="hover:bg-[#F4F8FC]/50 transition-colors duration-200">
 
                             <td class="px-6 py-4">
-                                <span class="text-xs font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md mb-1 inline-block" x-text="order.ticket"></span>
+                                <span class="text-xs font-black text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md mb-1 inline-block" x-text="order.reference"></span>
                                 <h5 class="font-black text-lg text-[#1E55AA]" x-text="order.name"></h5>
                                 <p class="font-bold text-[#1E55AA]/60 text-sm mt-0.5 flex items-center gap-1">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
@@ -149,7 +149,9 @@
                 <h3 class="text-2xl font-black text-[#1E55AA]"
                     x-text="modalMode === 'add' ? 'Registrar Encargo' : (modalMode === 'edit' ? 'Editar Encargo' : 'Detalles del Encargo')"></h3>
 
-                <span class="ml-auto bg-[#F4F8FC] px-4 py-1.5 rounded-lg text-[#1E55AA] font-black tracking-widest border border-[#1E55AA]/10" x-text="currentOrder.ticket"></span>
+                <span class="ml-auto bg-[#F4F8FC] px-4 py-1.5 rounded-lg text-[#1E55AA] font-black tracking-widest border border-[#1E55AA]/10"
+                      x-text="currentOrder.reference ? currentOrder.reference : 'NUEVO ENCARGO'">
+                </span>
             </div>
 
             <form @submit.prevent="saveOrder" class="space-y-6">
@@ -228,6 +230,23 @@
                             class="w-full rounded-2xl border-2 border-slate-100 bg-[#F4F8FC] py-3.5 px-4 font-black text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:bg-white focus:ring-4 focus:ring-[#1E55AA]/10 disabled:opacity-60 transition-all text-center">
                     </div>
 
+                    <div x-show="hasSubscription" x-collapse class="sm:col-span-12 bg-emerald-50 border-2 border-emerald-100 p-4 rounded-2xl flex items-center justify-between mt-2 transition-all">
+                        <div>
+                            <h4 class="text-emerald-800 font-black text-sm flex items-center gap-1.5">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"></path></svg>
+                                Suscripción Activa
+                            </h4>
+                            <p class="text-emerald-600 text-xs font-bold mt-0.5" x-text="'Kilos disponibles este mes: ' + selectedClientKilos + ' kg'"></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-emerald-800 font-black text-sm">Kilos restantes tras encargo:</p>
+                            {{-- Calculamos en tiempo real cuántos kilos le van a quedar --}}
+                            <p class="text-emerald-600 text-lg font-black"
+                            x-text="Math.max(0, selectedClientKilos - (currentOrder.quantity || 0)).toFixed(2) + ' kg'">
+                            </p>
+                        </div>
+                    </div>
+
                     {{-- Notas / Detalles extra --}}
                     <div class="sm:col-span-12">
                         <label class="mb-2 block text-sm font-black text-[#1E55AA]">Detalles Especiales o Notas</label>
@@ -283,8 +302,11 @@
                     <button type="button" @click="closeModal" class="rounded-2xl bg-[#F4F8FC] px-8 py-3.5 font-black text-[#1E55AA]/60 hover:bg-slate-200 hover:text-[#1E55AA] transition-all">
                         <span x-text="modalMode === 'view' ? 'Cerrar' : 'Cancelar'"></span>
                     </button>
-                    <button x-show="modalMode !== 'view'" type="submit" class="rounded-2xl bg-[#1E55AA] px-10 py-3.5 font-black text-white shadow-[0_8px_20px_rgba(30,85,170,0.2)] hover:bg-[#153e7d] hover:-translate-y-0.5 transition-all"
-                        x-text="modalMode === 'add' ? 'Guardar Encargo' : 'Actualizar'"></button>
+                    <button x-show="modalMode !== 'view'" type="submit"
+                        :disabled="isSaving"
+                        class="rounded-2xl bg-[#1E55AA] px-10 py-3.5 font-black text-white shadow-[0_8px_20px_rgba(30,85,170,0.2)] hover:bg-[#153e7d] hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-wait"
+                        x-text="isSaving ? 'Procesando...' : (modalMode === 'add' ? 'Guardar Encargo' : 'Actualizar')">
+                    </button>
                 </div>
             </form>
         </div>

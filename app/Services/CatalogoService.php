@@ -25,7 +25,7 @@ class CatalogoService
                 'clave_prodserv' => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                 'price'          => $datos['price'],
                 'stock'          => $datos['stock'] ?? 0,
-                'unit'           => $datos['unit'] ?? 'Pza',
+                'unit'           => $datos['unit'] ?? 'H87',
                 'is_active'      => $datos['is_active'] ?? true,
             ]),
 
@@ -34,6 +34,7 @@ class CatalogoService
                 'clave_prodserv'  => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                 'price'           => $datos['price'],
                 'duration_months' => $datos['duration_months'] ?? 1,
+                'kilos_per_month' => $datos['kilos_per_month'] ?? 0,
                 'description'     => $datos['description'] ?? null,
                 'is_active'       => $datos['is_active'] ?? true,
             ]),
@@ -64,7 +65,7 @@ class CatalogoService
                     'clave_prodserv' => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                     'price'          => $datos['price'],
                     'stock'          => $datos['stock'] ?? 0,
-                    'unit'           => $datos['unit'] ?? 'Pza',
+                    'unit'           => $datos['unit'] ?? 'H87',
                     'is_active'       => $datos['is_active'] ?? true,
                 ]);
             }),
@@ -75,6 +76,7 @@ class CatalogoService
                     'clave_prodserv'  => $datos['clave_prodserv'] ?? null, // <-- AGREGAR
                     'price'           => $datos['price'],
                     'duration_months' => $datos['duration_months'] ?? 1,
+                    'kilos_per_month' => $datos['kilos_per_month'] ?? 0,
                     'description'     => $datos['description'] ?? null,
                     'is_active'       => $datos['is_active'] ?? true,
                 ]);

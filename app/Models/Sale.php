@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 class Sale extends Model
 {
     // Agregamos 'reference' para que Laravel permita guardarlo
-    protected $fillable = ['reference', 'client_id', 'total', 'payment_method'];
+    protected $fillable = ['reference', 'client_id', 'total', 'payment_method', 'facturapi_id'];
 
     protected $casts = [
         'total' => 'decimal:2',

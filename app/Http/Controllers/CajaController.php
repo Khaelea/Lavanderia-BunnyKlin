@@ -6,6 +6,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Models\CorteCaja;
+use App\Models\ConfiguracionCaja;
+use App\Models\MovimientoCaja;
 
 class CajaController extends Controller
 {
@@ -30,7 +33,8 @@ class CajaController extends Controller
         // 3. Sumamos el total bruto de la recaudación del turno
         $totalBruto = $desgloseServicios->sum('total_recaudado');
 
-        $fondoInicial = 500.00; // Fondo fijo
+        $config = ConfiguracionCaja::obtener();
+        $fondoInicial = (float) $config->fondo_inicial;
 
         // Calculamos los ingresos REALES de la base de datos en Efectivo
         $ingresosEfectivo = DB::table('sales')
@@ -38,14 +42,19 @@ class CajaController extends Controller
             ->where('payment_method', 'Efectivo')
             ->sum('total');
 
-        // --- SISTEMA LOCAL CON SESIÓN PARA PRUEBAS ---
-        // Leemos los acumulados guardados localmente en la sesión (si no existen, inician en 0.00)
-        $retirosAutorizados = session('local_retiros', 0.00); 
-        $gastosOperativos = session('local_gastos', 0.00);
+       
+        $retirosAutorizados = MovimientoCaja::delTurno()->retiros()->sum('monto');
+        $gastosOperativos   = MovimientoCaja::delTurno()->gastos()->sum('monto');
 
         // Aplicamos la fórmula matemática
         $efectivoFinal = $fondoInicial + $ingresosEfectivo - $retirosAutorizados - $gastosOperativos;
 
+        // Agregamos el historial de cortes
+        $historialCortes = CorteCaja::with(['gastos', 'retiros'])
+                            ->orderBy('created_at', 'desc')
+                            ->take(10)
+                            ->get();
+                            
         // 4. Enviamos TODO a la vista
         return view('pages.caja', compact(
             'desgloseServicios', 
@@ -54,7 +63,9 @@ class CajaController extends Controller
             'ingresosEfectivo',
             'retirosAutorizados',
             'gastosOperativos',
-            'efectivoFinal'
+            'efectivoFinal',
+            'historialCortes',
+            'config'
         ));
     }
 
@@ -74,13 +85,12 @@ class CajaController extends Controller
         $monto = (float) $request->input('monto');
 
         // 2. Guardamos el acumulador de manera local en la sesión del servidor
-        if ($tipo === 'gasto') {
-            $actual = session('local_gastos', 0.00);
-            session(['local_gastos' => $actual + $monto]);
-        } else {
-            $actual = session('local_retiros', 0.00);
-            session(['local_retiros' => $actual + $monto]);
-        }
+        MovimientoCaja::create([
+            'tipo'                   => $tipo,
+            'monto'                  => $monto,
+            'concepto_o_responsable' => $request->input('concepto_o_responsable'),
+            'fecha_turno'            => today(),
+        ]);
 
         // 3. Respondemos con éxito al JavaScript para que actualice la interfaz sin recargar
         return response()->json([
@@ -109,17 +119,40 @@ class CajaController extends Controller
             ->get();
 
         $totalBruto        = $desgloseServicios->sum('total_recaudado');
-        $fondoInicial      = 500.00;
+        $fondoInicial      = (float) ConfiguracionCaja::obtener()->fondo_inicial;
         $ingresosEfectivo  = DB::table('sales')
                                 ->whereBetween('created_at', [$inicioTurno, $finTurno])
                                 ->where('payment_method', 'Efectivo')
                                 ->sum('total');
-        $retirosAutorizados = session('local_retiros', 0.00);
-        $gastosOperativos   = session('local_gastos', 0.00);
+        $retirosAutorizados = MovimientoCaja::delTurno()->retiros()->sum('monto');
+        $gastosOperativos   = MovimientoCaja::delTurno()->gastos()->sum('monto');
         $efectivoFinal      = $fondoInicial + $ingresosEfectivo - $retirosAutorizados - $gastosOperativos;
 
         // Efectivo contado viene del formulario de arqueo
         $efectivoContado = (float) $request->input('efectivo_real', 0);
+        $diferencia      = $efectivoContado - $efectivoFinal;
+
+        // Generamos el folio automático
+        $folio = 'CC-' . now()->format('Ymd') . '-' . str_pad(
+            CorteCaja::whereDate('created_at', today())->count() + 1,
+            3, '0', STR_PAD_LEFT
+        );
+
+        // Guardamos el corte en BD
+        $corte = CorteCaja::create([
+            'folio'             => $folio,
+            'fecha_cierre'      => now(),
+            'fondo_inicial'     => $fondoInicial,
+            'total_ingresos'    => $totalBruto,
+            'total_gastos'      => $gastosOperativos,
+            'total_retiros'     => $retirosAutorizados,
+            'efectivo_esperado' => $efectivoFinal,
+            'efectivo_contado'  => $efectivoContado,
+            'diferencia'        => $diferencia,
+            'facturado'         => false,
+        ]);
+
+        MovimientoCaja::delTurno()->update(['corte_id' => $corte->id]);
 
         // Logo en base64
         $logopath = public_path('images/logo/bklogo.png');
@@ -132,11 +165,12 @@ class CajaController extends Controller
         $fechaCorte = now()->format('d/m/Y');
         $horaCorte = now()->format('H:i:s');
 
+        $cfg = ConfiguracionCaja::obtener();
         $negocio = [
-            'nombre' => 'Lavandería BunnyKlin',
-            'direccion' => 'Calle 5 de Mayo, Col. Centro',
-            'ciudad' => 'San Juan del Río, Qro.',
-            'telefono' => '427 123 4567',
+            'nombre' => $cfg->nombre_negocio,
+            'direccion' => $cfg->direccion,
+            'ciudad' => $cfg->ciudad,
+            'telefono' => $cfg->telefono,
         ];
 
         $pdf = Pdf::loadView('caja.corte_caja', compact(
@@ -151,7 +185,8 @@ class CajaController extends Controller
             'fechaCorte',
             'horaCorte',
             'logoBase64',
-            'negocio'
+            'negocio',
+            'folio'
         ))->setPaper('a4', 'portrait');
 
         // Nombre del archivo con fecha y hora
@@ -173,7 +208,16 @@ class CajaController extends Controller
         // Traemos las ventas completas del turno (no sus items)
         $ventas = DB::table('sales')
             ->whereBetween('created_at', [$inicioTurno, $finTurno])
-            ->select('reference', 'total')
+            ->where(function ($query) {
+                $query->whereNull('facturapi_id')
+                    ->orWhere('facturapi_id', '');
+            })
+            ->whereExists(function ($query) {
+                $query->select(DB::raw(1))
+                    ->from('sale_items')
+                    ->whereColumn('sale_items.sale_id', 'sales.id');
+            })
+            ->select('id', 'reference', 'total')
             ->get();
 
         if ($ventas->isEmpty()) {
@@ -213,17 +257,65 @@ class CajaController extends Controller
                 'PPD'
             );
 
+            // Asignamos el ID de Facturapi a cada venta incluida en la factura
+            $idsVentas = $ventas->pluck('id')->toArray();
+            DB::table('sales')
+                ->whereIn('id', $idsVentas)
+                ->update(['facturapi_id' => $factura->id]);
+
+            // Marcamos el corte más reciente como facturado en BD
+            CorteCaja::whereNull('facturapi_id')
+                ->latest()
+                ->first()
+                ?->update([
+                    'facturado'    => true,
+                    'facturapi_id' => $factura->id
+                ]);
+
+            /*Código funcional comentado por pruebas    
             $apiKey   = config('services.facturapi.key');
             $response = \Illuminate\Support\Facades\Http::withToken($apiKey)
-                ->get("https://www.facturapi.io/v2/invoices/{$factura->id}/pdf");
+                ->get("https://www.facturapi.io/v2/invoices/{$factura->id}/zip");
 
             return response($response->body(), 200, [
-                'Content-Type'        => 'application/pdf',
-                'Content-Disposition' => 'attachment; filename="factura_global_' . now()->format('Y-m-d') . '.pdf"',
+                'Content-Type'        => 'application/zip',
+                'Content-Disposition' => 'attachment; filename="factura_global_' . now()->format('Y-m-d') . '.zip"',
+            ]);*/
+
+            // Devolvemos JSON con el ID para que el JS construya los enlaces
+            return response()->json([
+                'success'     => true,
+                'factura_id'  => $factura->id,
+                'ventas_count' => count($idsVentas)
             ]);
 
         } catch (\Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
+    }
+
+    public function actualizarFondo(Request $request)
+    {
+        $request->validate([
+            'fondo_inicial' => 'required|numeric|min:0',
+            'nombre_negocio' => 'nullable|string|max:255',
+            'direccion'      => 'nullable|string|max:255',
+            'ciudad'         => 'nullable|string|max:255',
+            'telefono'       => 'nullable|string|max:20',
+        ]);
+
+        $config = ConfiguracionCaja::obtener();
+        $config->update([
+            'fondo_inicial'  => $request->fondo_inicial,
+            'nombre_negocio' => $request->nombre_negocio,
+            'direccion'      => $request->direccion,
+            'ciudad'         => $request->ciudad,
+            'telefono'       => $request->telefono,
+        ]);
+
+        return response()->json([
+            'success'       => true,
+            'fondo_inicial' => (float) $config->fondo_inicial,
+        ]);
     }
 }

@@ -12,6 +12,7 @@
         </div>
 
         <div class="p-6 space-y-4">
+            {{-- Formulario para Modos: Crear, Editar y Ver --}}
             <template x-if="itemModal.mode !== 'delete'">
                 <form @submit.prevent="saveItem" class="space-y-4">
 
@@ -75,8 +76,8 @@
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Stock</label>
                             <input type="number" x-model="itemModal.stock" placeholder="0" :disabled="itemModal.mode === 'view'"
-                                class="w-full px-5 py-3 rounded-xl font-bold focus:outline-none transition-colors"
-                                :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'">
+                                 class="w-full px-5 py-3 rounded-xl font-bold focus:outline-none transition-colors"
+                                 :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'">
                         </div>
                         <div>
                             <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Unidad de Medida</label>
@@ -108,6 +109,14 @@
                             :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'">
                     </div>
 
+                    {{-- Campo: Kilos por mes (Solo Suscripciones) --}}
+                    <div x-show="itemModal.category === 'subscriptions'" x-collapse>
+                         <label class="block text-sm font-extrabold text-[#1E55AA]/70 mb-2 ml-1">Kilos Gratis al Mes</label>
+                            <input type="number" step="0.5" x-model="itemModal.kilos_per_month" placeholder="Ej. 20" :disabled="itemModal.mode === 'view'"
+                                class="w-full px-5 py-3 rounded-xl font-bold focus:outline-none transition-colors"
+                                :class="itemModal.mode === 'view' ? 'bg-transparent text-slate-800 border border-slate-200 shadow-inner' : 'bg-slate-50 border-2 border-slate-200 text-[#1E55AA] focus:border-[#1E55AA] focus:bg-white'">
+                    </div>
+
                     {{-- Botones Inferiores dinámicos --}}
                     <div class="flex gap-3 pt-4">
                         <button type="button" @click="closeModal()" class="flex-1 py-3 rounded-xl font-black text-[#1E55AA]/60 bg-slate-100 hover:bg-slate-200 transition-all">
@@ -120,8 +129,30 @@
                 </form>
             </template>
 
+            {{-- 👇 AQUÍ ESTÁ LA SOLUCIÓN: El bloque de eliminación que faltaba 👇 --}}
             <template x-if="itemModal.mode === 'delete'">
-                </template>
+                <div class="text-center p-4 space-y-4 font-nunito">
+                    <div class="w-20 h-20 bg-rose-50 text-rose-500 rounded-full flex items-center justify-center mx-auto shadow-inner border border-rose-100 animate-pulse">
+                        <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                        </svg>
+                    </div>
+                    
+                    <h3 class="text-xl font-black text-slate-800">¿Confirmar Eliminación?</h3>
+                    <p class="text-slate-500 font-bold leading-relaxed">
+                        ¿Estás completamente segura de que deseas borrar <span class="text-[#1E55AA] font-black" x-text="itemModal.name"></span>? Esta acción eliminará el registro permanentemente del catálogo.
+                    </p>
+                    
+                    <div class="flex gap-3 pt-4">
+                        <button type="button" @click="closeModal()" class="flex-1 py-3 rounded-xl font-black text-slate-500 bg-slate-100 hover:bg-slate-200 transition-all">
+                            Cancelar
+                        </button>
+                        <button type="button" @click="deleteItem()" class="flex-1 py-3 rounded-xl font-black text-white bg-rose-500 hover:bg-rose-600 shadow-lg shadow-rose-500/20 transition-all">
+                            Sí, Eliminar
+                        </button>
+                    </div>
+                </div>
+            </template>
         </div>
     </div>
 </div>
@@ -139,26 +170,73 @@
         </div>
 
         <div class="p-6 space-y-4">
-            
-            <div x-show="cart.some(item => item.category === 'subscriptions')" x-transition class="grid grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-black text-[#1E55AA] mb-1">Nombre del Cliente</label>
-                    <input type="text" x-model="clienteForm.nombre" placeholder="Público en General" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2.5 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
-                </div>
-                <div>
-                    <label class="block text-sm font-black text-[#1E55AA] mb-1">Teléfono</label>
-                    <input type="text" x-model="clienteForm.telefono" placeholder="Opcional" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2.5 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
-                </div>
-            </div>
 
-            <div x-show="cart.some(item => item.category === 'subscriptions')" x-transition class="grid grid-cols-2 gap-4 bg-[#F4F8FC] p-4 rounded-xl border border-[#1E55AA]/10 mt-2">
-                <div>
-                    <label class="block text-sm font-black text-[#1E55AA] mb-1">Inicio de Plan</label>
-                    <input type="date" x-model="clienteForm.inicio" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
+            {{-- BLOQUE DE SUSCRIPCIÓN Y CLIENTE --}}
+            <div x-show="cart.some(item => item.category === 'subscriptions')" x-collapse class="space-y-4">
+
+                {{-- Selector de Tipo de Registro --}}
+                <div class="bg-slate-50 p-4 rounded-2xl border-2 border-slate-100">
+                    <label class="block text-sm font-black text-[#1E55AA] mb-2">¿Para quién es la suscripción?</label>
+                    <div class="flex gap-4">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" x-model="clienteForm.tipoRegistro" value="nuevo" class="w-5 h-5 text-[#1E55AA] focus:ring-[#1E55AA]">
+                            <span class="font-bold text-slate-700">Crear Nuevo Cliente</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" x-model="clienteForm.tipoRegistro" value="existente" class="w-5 h-5 text-[#1E55AA] focus:ring-[#1E55AA]">
+                            <span class="font-bold text-slate-700">Cliente Existente</span>
+                        </label>
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm font-black text-[#1E55AA] mb-1">Fin de Plan</label>
-                    <input type="date" x-model="clienteForm.fin" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
+
+                {{-- Campos para Cliente Existente (Con Datalist) --}}
+                <div x-show="clienteForm.tipoRegistro === 'existente'" x-collapse>
+                    <label class="block text-sm font-black text-[#1E55AA] mb-1">Buscar Cliente</label>
+
+                    {{-- Input Visible --}}
+                    <input type="text"
+                        list="clientes-datalist"
+                        x-model="clienteForm.cliente_texto"
+                        @input="vincularClienteId()"
+                        placeholder="Escribe el nombre o teléfono..."
+                        class="w-full rounded-xl border-2 border-slate-100 bg-white py-2.5 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] transition-all">
+
+                    {{-- Lista de Datos Nativa --}}
+                    <datalist id="clientes-datalist">
+                        <template x-for="client in clients" :key="client.id">
+                            <option :value="client.name + ' (' + (client.phone || 'Sin tel') + ')'"></option>
+                        </template>
+                    </datalist>
+
+                    {{-- Feedback visual para el cajero --}}
+                    <div class="mt-2 text-[11px] font-black uppercase tracking-wider transition-colors"
+                         x-show="clienteForm.cliente_texto !== ''"
+                         :class="clienteForm.cliente_id ? 'text-emerald-500' : 'text-rose-400'">
+                         <span x-text="clienteForm.cliente_id ? '✓ Cliente vinculado (ID: ' + clienteForm.cliente_id + ')' : '⚠️ Debes seleccionar un cliente válido de la lista'"></span>
+                    </div>
+                </div>
+
+                {{-- Campos para Nuevo Cliente --}}
+                <div x-show="clienteForm.tipoRegistro === 'nuevo'" x-collapse class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="col-span-1 md:col-span-2">
+                        <label class="block text-sm font-black text-[#1E55AA] mb-1">Nombre Completo <span class="text-rose-500">*</span></label>
+                        <input type="text" x-model="clienteForm.nombre" placeholder="Ej. Juan Pérez" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2.5 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-black text-[#1E55AA] mb-1">Teléfono</label>
+                        <input type="text" x-model="clienteForm.telefono" placeholder="Opcional" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2.5 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-black text-[#1E55AA] mb-1">Correo Electrónico</label>
+                        <input type="email" x-model="clienteForm.email" placeholder="Opcional" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2.5 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
+                    </div>
+                </div>
+
+                {{-- Fecha de Inicio (Aplica para ambos casos) --}}
+                <div class="bg-[#F4F8FC] p-4 rounded-xl border border-[#1E55AA]/10 mt-2">
+                    <label class="block text-sm font-black text-[#1E55AA] mb-1">Inicio de Plan <span class="text-rose-500">*</span></label>
+                    <input type="date" x-model="clienteForm.inicio" class="w-full rounded-xl border-2 border-slate-100 bg-white py-2 px-3 font-bold text-[#1E55AA] outline-none focus:border-[#1E55AA] focus:ring-2 focus:ring-[#1E55AA]/10 transition-all">
+                    <p class="text-[11px] font-bold text-slate-400 mt-1">El fin del plan se calculará automáticamente.</p>
                 </div>
             </div>
 

@@ -68,6 +68,7 @@
                         <tr class="bg-slate-50 border-b border-slate-100 text-slate-600 text-sm font-black">
                             <th class="p-5 pl-6">Plan de Suscripción</th>
                             <th class="p-5">Duración</th>
+                            <th class="p-5">Beneficios Mensuales</th>
                             <th class="p-5">Precio</th>
                             <th class="p-5 text-center">Estado</th>
                             <th class="p-5 pr-6 text-center">Acciones</th>
@@ -84,12 +85,24 @@
                                     <div class="text-[11px] font-bold text-slate-400 mt-0.5 max-w-[250px] truncate" x-show="item.description" x-text="item.description"></div>
                                 </td>
 
-                                {{-- CAMBIO 4: Mostramos los meses de duración --}}
+                                {{-- Mostramos los meses de duración --}}
                                 <td class="p-5">
                                     <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black tracking-wide bg-indigo-50 text-indigo-600 border border-indigo-100">
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                         <span x-text="item.duration_months + (item.duration_months == 1 ? ' Mes' : ' Meses')"></span>
                                     </div>
+                                </td>
+
+                                <td class="p-5">
+                                    <template x-if="item.kilos_per_month > 0">
+                                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-black tracking-wide bg-emerald-50 text-emerald-600 border border-emerald-100">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"></path></svg>
+                                            <span x-text="item.kilos_per_month + ' Kg Gratis'"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="!item.kilos_per_month || item.kilos_per_month <= 0">
+                                        <span class="text-xs font-bold text-slate-400">Sin kilos incluidos</span>
+                                    </template>
                                 </td>
 
                                 {{-- Precio --}}

@@ -7,7 +7,7 @@
     [x-cloak] { display: none !important; }
 </style>
 
-<div x-data="posSystem({{ Js::from($services ?? []) }}, {{ Js::from($supplies ?? []) }}, {{ Js::from($subscriptions ?? []) }})" class="font-nunito relative min-h-screen pb-12 bg-[#F4F8FC] text-[#1E55AA] selection:bg-[#FFE63C] selection:text-[#1E55AA]">
+<div x-data="posSystem({{ Js::from($services ?? []) }}, {{ Js::from($supplies ?? []) }}, {{ Js::from($subscriptions ?? []) }}, {{ Js::from($clients ?? []) }})" x-cloak class="font-nunito relative min-h-screen pb-12 bg-[#F4F8FC] text-[#1E55AA] selection:bg-[#FFE63C] selection:text-[#1E55AA]">
 
     {{-- Fondo Decorativo --}}
     <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

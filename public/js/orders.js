@@ -1,5 +1,6 @@
 document.addEventListener("alpine:init", () => {
     Alpine.data("ordersManager", () => ({
+        isSaving: false,
         searchQuery: "",
         isModalOpen: false,
         modalMode: "add",
@@ -10,7 +11,7 @@ document.addEventListener("alpine:init", () => {
         currentOrder: {
             id: null,
             client_id: null,
-            ticket: "",
+            reference: "",
             name: "",
             phone: "",
             service_id: "",
@@ -22,6 +23,8 @@ document.addEventListener("alpine:init", () => {
             arrivalDate: "",
             deliveryDate: "",
         },
+        hasSubscription: false,
+        selectedClientKilos: 0,
 
         async init() {
             await this.cargarDatosDesdeBD();
@@ -45,7 +48,7 @@ document.addEventListener("alpine:init", () => {
         mapearOrden(o) {
             return {
                 id: o.id,
-                ticket: o.sale ? o.sale.reference : "N/A",
+                reference: o.reference,
                 name: o.client ? o.client.name : "Cliente Mostrador",
                 phone: o.client ? o.client.phone : "",
                 service_id: o.service_id,
@@ -71,7 +74,7 @@ document.addEventListener("alpine:init", () => {
                 (o) =>
                     (o.name && o.name.toLowerCase().includes(q)) ||
                     (o.phone && o.phone.toLowerCase().includes(q)) ||
-                    (o.ticket && o.ticket.toLowerCase().includes(q)),
+                    (o.reference && o.reference.toLowerCase().includes(q)),
             );
         },
 
@@ -96,16 +99,30 @@ document.addEventListener("alpine:init", () => {
                 return;
             }
 
-            // Buscamos el servicio seleccionado en nuestra lista local
             const servicioSeleccionado = this.availableServices.find(
                 (s) => s.id == this.currentOrder.service_id,
             );
 
             if (servicioSeleccionado) {
-                // Multiplicamos el precio base por la cantidad
-                this.currentOrder.total =
-                    parseFloat(servicioSeleccionado.price) *
-                    parseFloat(this.currentOrder.quantity);
+                let qty = parseFloat(this.currentOrder.quantity);
+                let precioBase = parseFloat(servicioSeleccionado.price);
+
+                // Si el cliente tiene una suscripción y le quedan kilos
+                if (this.hasSubscription && this.selectedClientKilos > 0) {
+                    if (qty <= this.selectedClientKilos) {
+                        // El encargo completo entra gratis en su suscripción
+                        this.currentOrder.total = 0;
+                    } else {
+                        // El encargo es MAYOR a los kilos que le quedan.
+                        // Ejemplo: Trae 10kg pero solo le quedan 4kg gratis.
+                        // Solo le cobramos los 6kg excedentes.
+                        let kilosExcedentes = qty - this.selectedClientKilos;
+                        this.currentOrder.total = kilosExcedentes * precioBase;
+                    }
+                } else {
+                    // Cobro normal (Sin suscripción)
+                    this.currentOrder.total = precioBase * qty;
+                }
             }
         },
 
@@ -116,9 +133,9 @@ document.addEventListener("alpine:init", () => {
             }).format(amount);
         },
 
-        generateTicket() {
-            return "ORD-" + Math.floor(1000 + Math.random() * 9000);
-        },
+        //generateTicket() {
+        //    return "ORD-" + Math.floor(1000 + Math.random() * 9000);
+        //},
 
         openModal(mode, order = null) {
             this.modalMode = mode;
@@ -137,7 +154,7 @@ document.addEventListener("alpine:init", () => {
                 this.currentOrder = {
                     id: null,
                     client_id: null, // Asegurar que inicie limpio
-                    ticket: this.generateTicket(),
+                    reference: "",
                     name: "",
                     phone: "",
                     service_id: "",
@@ -158,6 +175,10 @@ document.addEventListener("alpine:init", () => {
         },
 
         async saveOrder() {
+            if (this.isSaving) return;
+
+            this.isSaving = true;
+
             try {
                 const token = document
                     .querySelector('meta[name="csrf-token"]')
@@ -192,6 +213,20 @@ document.addEventListener("alpine:init", () => {
                 const result = await response.json();
                 const ordenMapeada = this.mapearOrden(result.order);
 
+                if (result.order && result.order.client) {
+                    const clientIndex = this.availableClients.findIndex(
+                        (c) => c.id === result.order.client.id,
+                    );
+
+                    if (clientIndex !== -1) {
+                        this.availableClients.splice(
+                            clientIndex,
+                            1,
+                            result.order.client,
+                        );
+                    }
+                }
+
                 if (this.modalMode === "add") {
                     this.orders.unshift(ordenMapeada);
                 } else {
@@ -206,6 +241,8 @@ document.addEventListener("alpine:init", () => {
             } catch (error) {
                 console.error("Error network:", error);
                 alert("Hubo un problema de conexión.");
+            } finally {
+                this.isSaving = false;
             }
         },
 
@@ -262,18 +299,36 @@ document.addEventListener("alpine:init", () => {
             );
         },
 
-        selectClient(client) {
-            this.currentOrder.client_id = client.id;
-            this.currentOrder.name = client.name;
-            this.currentOrder.phone = client.phone || "";
+        selectClient(c) {
+            this.currentOrder.client_id = c.id;
+            this.currentOrder.name = c.name;
+            this.currentOrder.phone = c.phone || "";
             this.showClientDropdown = false;
+
+            // Lógica para saber si tiene kilos disponibles
+            // (Asumimos que el backend mandará 'remaining_kilos' en el objeto del cliente)
+            let kilosDisponibles = parseFloat(c.remaining_kilos) || 0;
+
+            if (c.has_active_subscription && kilosDisponibles > 0) {
+                this.hasSubscription = true;
+                this.selectedClientKilos = kilosDisponibles;
+            } else {
+                this.hasSubscription = false;
+                this.selectedClientKilos = 0;
+            }
+
+            // Recalculamos el total por si ya había puesto un peso antes de elegir al cliente
+            this.calcularTotalAutomatico();
+            console.log({ c });
         },
 
         clearClientSelection() {
             this.currentOrder.client_id = null;
             this.currentOrder.name = "";
             this.currentOrder.phone = "";
-            this.showClientDropdown = true; // Vuelve a mostrar la lista
+            this.hasSubscription = false;
+            this.selectedClientKilos = 0;
+            this.calcularTotalAutomatico(); // Recalculamos sin el descuento
         },
     }));
 });

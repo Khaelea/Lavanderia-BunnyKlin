@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class Subscription extends Model
 {
-    protected $fillable = ['name', 'clave_prodserv', 'price', 'duration_months', 'description', 'is_active'];
+    protected $fillable = ['name', 'clave_prodserv', 'price', 'duration_months', 'kilos_per_month' , 'description', 'is_active'];
 
     protected $casts = [
         'is_active' => 'boolean',

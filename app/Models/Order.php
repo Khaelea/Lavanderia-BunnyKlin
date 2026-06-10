@@ -9,6 +9,7 @@ class Order extends Model
 {
     // 1. Campos permitidos
     protected $fillable = [
+        'reference',
         'sale_id',
         'client_id',
         'service_id',

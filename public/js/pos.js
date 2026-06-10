@@ -1,4 +1,4 @@
-function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
+function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
     const adaptarCatalogo = (data, category) => {
         if (!data || !Array.isArray(data)) return [];
         return data.map(item => ({
@@ -11,6 +11,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             stock: item.stock || null,
             unit: item.unit || null,
             duration_months: item.duration_months || null,
+            kilos_per_month: item.kilos_per_month || null,
             is_active: item.is_active ? true : false,
             is_for_orders: item.is_for_orders ? true : false,
         }));
@@ -33,6 +34,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             stock: 0,
             unit: "",
             duration_months: 1,
+            kilos_per_month: 0,
             is_active: true,
             is_for_orders: false,
         },
@@ -41,12 +43,23 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
         errorPago: "",
         debugStatus: "",
         tiempoFormateado: "",
-        clienteForm: { nombre: "", telefono: "", inicio: "", fin: "" },
         
+        // Formulario de clientes unificado y avanzado
+        clienteForm: {
+            tipoRegistro: "nuevo",
+            cliente_id: "",
+            cliente_texto: "",
+            nombre: "",
+            telefono: "",
+            email: "",
+            inicio: new Date().toISOString().split("T")[0],
+            fin: "",
+        },
+
         services: adaptarCatalogo(servicesDb, "services"),
         supplies: adaptarCatalogo(suppliesDb, "supplies"),
         subscriptions: adaptarCatalogo(subscriptionsDb, "subscriptions"),
-        extras: adaptarCatalogo(extrasDb, "extras"),
+        clients: clientsDb || [],
         cart: [],
         
         intentId: null,
@@ -84,7 +97,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
         removeItem(index) { this.cart.splice(index, 1); },
         clearCart() { this.cart = []; },
 
-        // ========== MODALES DE 脥TEMS ==========
+        // ========== MODALES DE ÍTEMS ==========
         openAddModal(category) {
             this.itemModal = {
                 open: true,
@@ -98,6 +111,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: 0,
                 unit: "",
                 duration_months: 1,
+                kilos_per_month: 0,
                 is_active: true,
                 is_for_orders: false,
             };
@@ -116,6 +130,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                kilos_per_month: item.kilos_per_month || 0,
                 is_for_orders: item.is_for_orders ? true : false,
                 is_active: item.is_active ? true : false,
             };
@@ -134,6 +149,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                kilos_per_month: item.kilos_per_month || 0,
                 is_active: item.is_active ? true : false,
                 is_for_orders: item.is_for_orders ? true : false,
             };
@@ -152,6 +168,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: item.stock || null,
                 unit: item.unit || null,
                 duration_months: item.duration_months || null,
+                kilos_per_month: item.kilos_per_month || 0,
                 is_active: item.is_active ? true : false,
                 is_for_orders: item.is_for_orders ? true : false,
             };
@@ -171,6 +188,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 stock: this.itemModal.stock,
                 unit: this.itemModal.unit,
                 duration_months: this.itemModal.duration_months,
+                kilos_per_month: parseFloat(this.itemModal.kilos_per_month) || 0,
                 is_active: this.itemModal.is_active,
                 is_for_orders: this.itemModal.is_for_orders ? true : false,
             };
@@ -197,12 +215,12 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
 
                     if (!response.ok) {
                         const errorCrudo = await response.text();
-                        console.error("馃毃 DETALLE DEL ERROR DE LARAVEL:", errorCrudo);
+                        console.error("🚨 DETALLE DEL ERROR DE LARAVEL:", errorCrudo);
                         try {
                             const errorJson = JSON.parse(errorCrudo);
                             alert("Error del servidor: " + (errorJson.message || errorJson.error));
                         } catch (e) {
-                            alert("Error cr铆tico del servidor. Revisa la consola.");
+                            alert("Error crítico del servidor. Revisa la consola.");
                         }
                         return;
                     }
@@ -226,6 +244,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         targetList[idx].stock = data.item.stock || null;
                         targetList[idx].unit = data.item.unit || null;
                         targetList[idx].duration_months = data.item.duration_months || null;
+                        targetList[idx].kilos_per_month = data.item.kilos_per_month || null;
                         targetList[idx].clave_prodserv = data.item.clave_prodserv || null;
                         targetList[idx].is_active = data.item.is_active ? true : false;
                         targetList[idx].is_for_orders = data.item.is_for_orders ? true : false;
@@ -305,7 +324,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             } catch (error) {
                 console.error("Error al cambiar estado:", error);
                 service.is_active = !nuevoEstado;
-                alert("Hubo un problema de conexi贸n. El estado no se cambi贸.");
+                alert("Hubo un problema de conexión. El estado no se cambió.");
             }
         },
 
@@ -316,12 +335,8 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 const nextMonth = new Date();
                 nextMonth.setDate(today.getDate() + 30);
 
-                this.clienteForm = {
-                    nombre: "",
-                    telefono: "",
-                    inicio: today.toISOString().split("T")[0],
-                    fin: nextMonth.toISOString().split("T")[0],
-                };
+                this.clienteForm.inicio = today.toISOString().split("T")[0];
+                this.clienteForm.fin = nextMonth.toISOString().split("T")[0];
                 this.showPreConfirmacion = true; 
             }
         },
@@ -331,7 +346,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
         mostrarError(mensaje) {
             if (typeof mensaje !== 'string') mensaje = String(mensaje);
             if (mensaje.startsWith('<') || mensaje.includes('Unexpected token')) {
-                mensaje = 'Error inesperado. Verifique la conexi贸n.';
+                mensaje = 'Error inesperado. Verifique la conexión.';
             }
             this.errorPago = mensaje;
             this.showErrorModal = true;
@@ -343,7 +358,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
             this.showPreConfirmacion = true;
         },
 
-        cancelarTerminal(mensaje = "Operaci贸n cancelada por el usuario.") {
+        cancelarTerminal(mensaje = "Operación cancelada por el usuario.") {
             this.pollingActive = false;
             this.esperandoTerminal = false;
             this.debugStatus = "";
@@ -353,7 +368,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
         async confirmarCheckout(metodo = "Terminal") {
             if (metodo === "Terminal") {
                 if (this.total < 5) {
-                    this.mostrarError("El monto m铆nimo es de $5.00 MXN para procesar tarjeta.");
+                    this.mostrarError("El monto mínimo es de $5.00 MXN para procesar tarjeta.");
                     return;
                 }
 
@@ -383,7 +398,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                             const err = await response.json();
                             throw new Error(err.error || err.message || "Error del servidor");
                         } else {
-                            throw new Error("El servidor no respondi贸 correctamente.");
+                            throw new Error("El servidor no respondió correctamente.");
                         }
                     }
 
@@ -404,20 +419,16 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                             const statusRes = await fetch(`/terminal/estado/${this.intentId}`);
                             if (!statusRes.ok) {
                                 this.debugStatus = `Error HTTP ${statusRes.status} (intento ${intentos})`;
-                                console.warn(this.debugStatus);
                                 continue;
                             }
                             const ct = statusRes.headers.get('content-type');
                             if (!ct || !ct.includes('application/json')) {
                                 this.debugStatus = `Respuesta no JSON (intento ${intentos})`;
-                                console.warn(this.debugStatus);
                                 continue;
                             }
                             statusData = await statusRes.json();
-                            console.log(`Intento ${intentos}:`, statusData);
                         } catch (e) {
                             this.debugStatus = `Error de red (intento ${intentos})`;
-                            console.warn(this.debugStatus, e);
                             continue;
                         }
 
@@ -432,7 +443,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
 
                         const status = (statusData.status || '').toUpperCase();
                         const paymentStatus = (statusData.payment_status || '').toUpperCase();
-                        this.debugStatus = `Estado: ${status || '?'} / Pago: ${paymentStatus || '?'} (intento ${intentos})`;
+                        this.debugStatus = `Estado: ${status} / Pago: ${paymentStatus} (intento ${intentos})`;
 
                         if (['OPEN', 'ON_TERMINAL', 'PROCESSING', 'READY'].includes(status)) {
                             continue;
@@ -448,7 +459,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         } else {
                             let msj = 'El pago no fue aprobado.';
                             if (status === 'CANCELED' || status === 'ABANDONED') msj = 'Pago cancelado en la terminal.';
-                            else if (status === 'FINISHED' && paymentStatus === 'REJECTED') msj = 'Tarjeta rechazada. Intente otro m茅todo.';
+                            else if (status === 'FINISHED' && paymentStatus === 'REJECTED') msj = 'Tarjeta rechazada. Intente otro método.';
                             else if (status === 'ERROR') msj = 'Error en la terminal. Intente nuevamente.';
                             throw new Error(msj);
                         }
@@ -473,13 +484,34 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
 
         async finalizarVentaLocal(metodo) {
             try {
-                const payload = {
+                let clientIdForSale = null;
+                const hasSubscription = this.cart.some(item => item.category === "subscriptions");
+
+                // --- LÓGICA DE CLIENTES (Base de Datos Real de tus compañeros) ---
+                if (hasSubscription) {
+                    if (this.clienteForm.tipoRegistro === "nuevo" && !this.clienteForm.nombre.trim()) {
+                        alert("Por favor ingresa el nombre del cliente.");
+                        return;
+                    }
+                    if (this.clienteForm.tipoRegistro === "existente" && !this.clienteForm.cliente_id) {
+                        alert("Por favor selecciona un cliente válido de la lista.");
+                        return;
+                    }
+
+                    // Guardamos o actualizamos al cliente en el servidor y recuperamos su ID
+                    clientIdForSale = await this.procesarClientePOS();
+                }
+
+                // --- REGISTRO DE LA VENTA EN BD ---
+                const payloadVenta = {
+                    client_id: clientIdForSale,
                     total: parseFloat(this.total).toFixed(2),
                     metodo_pago: metodo,
                     detalles: this.cart,
-                    cliente: this.clienteForm.nombre.trim() || "P煤blico en General"
+                    cliente: this.clienteForm.nombre.trim() || "Público en General"
                 };
-                const response = await fetch("/ventas/checkout", {
+
+                const responseVenta = await fetch("/ventas/checkout", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -487,27 +519,62 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                         "X-Requested-With": "XMLHttpRequest",
                         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
                     },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payloadVenta),
                 });
-                if (!response.ok) {
-                    const err = await response.json().catch(() => ({}));
-                    throw new Error(err.message || "Error al registrar la venta");
-                }
-                const data = await response.json();
-                if (this.clienteForm.nombre.trim() !== "") this.registrarClienteLocal();
 
+                if (!responseVenta.ok) {
+                    const errorCrudo = await responseVenta.text();
+                    console.error("🚨 ERROR LARAVEL (Venta):", errorCrudo);
+                    throw new Error("Error al guardar la venta en la base de datos");
+                }
+
+                const dataVenta = await responseVenta.json();
+
+                // Tu guardado local clásico en LocalStorage (Respaldo alternativo)
+                if (this.clienteForm.nombre.trim() !== "") {
+                    this.registrarClienteLocal();
+                }
+
+                // --- CONTROL DE INVENTARIO (Reducción de Stock de Insumos) ---
+                this.cart.forEach((itemCart) => {
+                    if (itemCart.category === "supplies") {
+                        const indexOriginal = this.supplies.findIndex(s => s.id === itemCart.id);
+                        if (indexOriginal !== -1) {
+                            this.supplies[indexOriginal].stock -= itemCart.quantity;
+                            if (this.supplies[indexOriginal].stock < 0) {
+                                this.supplies[indexOriginal].stock = 0;
+                            }
+                        }
+                    }
+                });
+
+                // --- FINALIZAR PROCESO (Estructuración del ticket de éxito) ---
                 this.ultimaVenta = {
-                    folio: data.venta?.folio || data.venta?.reference || "BK-" + Date.now().toString().slice(-4),
-                    fecha: new Date().toLocaleString("es-MX"),
-                    total: this.total,
+                    folio: dataVenta.venta?.reference || dataVenta.venta?.folio || "BK-" + Date.now().toString().slice(-4),
+                    fecha: new Date().toLocaleString("es-MX", { timeZone: "America/Mexico_City" }),
+                    total: dataVenta.venta?.total || this.total,
                 };
+
                 this.showPreConfirmacion = false;
                 this.showConfirmacion = true;
                 this.clearCart();
+
+                // Reiniciamos el formulario limpio para la siguiente venta
+                this.clienteForm = {
+                    tipoRegistro: "nuevo",
+                    cliente_id: "",
+                    cliente_texto: "",
+                    nombre: "",
+                    telefono: "",
+                    email: "",
+                    inicio: new Date().toISOString().split("T")[0],
+                    fin: "",
+                };
+
             } catch (error) {
                 console.error("Error al guardar en BD:", error);
                 this.esperandoTerminal = false;
-                this.mostrarError("Error: " + error.message);
+                this.mostrarError(error.message || "Hubo un problema al procesar el cobro.");
             }
         },
 
@@ -531,6 +598,72 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, extrasDb) {
                 subscriptionEndDate: planName !== "Ninguna" ? this.clienteForm.fin : "",
             });
             localStorage.setItem("lavanderia_clientes_final_v2", JSON.stringify(clientes));
-        }
+        },
+
+        async procesarClientePOS() {
+            const subItem = this.cart.find(item => item.category === "subscriptions");
+            let payload = {};
+
+            if (this.clienteForm.tipoRegistro === "nuevo") {
+                payload = {
+                    name: this.clienteForm.nombre,
+                    phone: this.clienteForm.telefono,
+                    email: this.clienteForm.email,
+                    subscription_id: subItem ? subItem.id : null,
+                    start_subscription: this.clienteForm.inicio,
+                    wantsBilling: false,
+                };
+            } else {
+                const clienteExistente = this.clients.find(c => c.id === parseInt(this.clienteForm.cliente_id));
+                payload = {
+                    name: clienteExistente.name,
+                    phone: clienteExistente.phone,
+                    email: clienteExistente.email,
+                    subscription_id: subItem ? subItem.id : null,
+                    start_subscription: this.clienteForm.inicio,
+                    wantsBilling: false,
+                };
+            }
+
+            const url = this.clienteForm.tipoRegistro === "nuevo" ? "/api/clientes" : `/api/clientes/${this.clienteForm.cliente_id}`;
+            const method = this.clienteForm.tipoRegistro === "nuevo" ? "POST" : "PUT";
+
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                },
+                body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+                const err = await response.json();
+                console.error("Error en validación del cliente:", err);
+                throw new Error("No se pudo guardar la información del cliente. Verifica los datos.");
+            }
+
+            const data = await response.json();
+
+            if (this.clienteForm.tipoRegistro === "nuevo") {
+                this.clients.unshift(data.client);
+            }
+
+            return data.client.id;
+        },
+
+        vincularClienteId() {
+            const clienteEncontrado = this.clients.find((c) => {
+                const formatoTexto = c.name + " (" + (c.phone || "Sin tel") + ")";
+                return formatoTexto === this.clienteForm.cliente_text; // Soporta cliente_text o cliente_texto según input
+            });
+
+            if (clienteEncontrado) {
+                this.clienteForm.cliente_id = clienteEncontrado.id;
+            } else {
+                this.clienteForm.cliente_id = "";
+            }
+        },
     };
 }

@@ -65,7 +65,7 @@ class ClientController extends Controller
         ]);
 
         $client = $this->clientService->guardarCliente($datosValidados);
-        $client->load('subscription'); // Cargamos la relación para devolverla al frontend
+        $client->load('currentSubscription.plan');
 
         return response()->json(['success' => true, 'client' => $client]);
     }
@@ -107,7 +107,7 @@ class ClientController extends Controller
         ]);
 
         $client = $this->clientService->guardarCliente($datosValidados, $client);
-        $client->load('subscription');
+        $client->load('currentSubscription.plan');
 
         return response()->json(['success' => true, 'client' => $client]);
     }
