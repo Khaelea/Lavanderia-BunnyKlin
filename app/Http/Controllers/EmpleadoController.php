@@ -7,12 +7,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 use App\Mail\AprobacionCuentaMailable;
 
 class EmpleadoController extends Controller
 {
-    // Guarda al empleado como pendiente y dispara el correo
     public function store(Request $request)
     {
         $request->validate([
@@ -22,61 +21,72 @@ class EmpleadoController extends Controller
             'password' => 'required|min:6'
         ]);
 
-        $token = Str::random(60);
+        try {
+            DB::beginTransaction();
 
-        $empleado = User::create([
-            'name' => $request->nombre,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'role' => $request->rol,
-            'status' => 'pendiente', 
-            'confirmation_token' => $token
-        ]);
+            $token = Str::random(60);
 
-        Mail::to('soporte@inteligreen.com.mx')->send(new AprobacionCuentaMailable($empleado, $token));
+            $empleado = User::create([
+                'name' => $request->nombre,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role' => $request->rol,
+                'status' => 'pendiente', 
+                'confirmation_token' => $token
+            ]);
 
-        return redirect()->back()->with('success', '¡Solicitud enviada! La cuenta está pendiente de aprobación por el administrador.');
+            Mail::to('soporte@inteligreen.com.mx')->send(new AprobacionCuentaMailable($empleado, $token));
+
+            DB::commit();
+
+            return redirect()->back()->with('success', '¡Solicitud enviada! La cuenta está pendiente de aprobación.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return redirect()->back()->with('error', 'No se pudo procesar la solicitud. Revisa la conexión al correo.')->withInput();
+        }
     }
 
-    // ¡NUEVA! Función para eliminar cuenta directamente desde la tabla de la página
     public function eliminarPorId($id)
     {
         $usuario = User::findOrFail($id);
         $nombre = $usuario->name;
+        $usuario->delete();
         
-        DB::table('users')->where('id', $id)->delete();
-
         return redirect()->back()->with('success', 'Has eliminado la cuenta de '.$nombre.' exitosamente.');
     }
 
-    // Funciones que se activan desde el correo
     public function aprobar($token)
     {
-        $usuario = User::where('confirmation_token', $token)->first();
+        $tokenLimpio = trim($token);
+        
+        $usuario = User::where('confirmation_token', $tokenLimpio)->first();
 
         if (!$usuario) {
             return redirect('/personal')->with('error', 'El enlace no es válido o esta solicitud ya fue procesada.');
         }
 
-        $usuario->status = 'activo';
-        $usuario->confirmation_token = null; 
-        $usuario->email_verified_at = now();
-        $usuario->save();
+        $usuario->update([
+            'status' => 'activo',
+            'confirmation_token' => null, 
+            'email_verified_at' => now()
+        ]);
 
         return redirect('/personal')->with('success', '¡Has aprobado la cuenta de '.$usuario->name.' con éxito!');
     }
 
     public function rechazar($token)
     {
-        $usuario = User::where('confirmation_token', $token)->first();
+        $tokenLimpio = trim($token);
+        
+        $usuario = User::where('confirmation_token', $tokenLimpio)->first();
 
         if (!$usuario) {
             return redirect('/personal')->with('error', 'El enlace no es válido o esta solicitud ya fue procesada.');
         }
 
-        $nombre = $usuario->name;
-        DB::table('users')->where('id', $usuario->id)->delete();
-
-        return redirect('/personal')->with('success', 'Has rechazado y eliminado la solicitud de cuenta de '.$nombre.'.');
+        $usuario->delete();
+        
+        return redirect('/personal')->with('success', 'Has rechazado la solicitud.');
     }
 }
