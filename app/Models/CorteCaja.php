@@ -9,6 +9,7 @@ class CorteCaja extends Model
     protected $table = 'cortes_caja';
 
     protected $fillable = [
+        'user_id',
         'folio',
         'fecha_cierre',
         'fondo_inicial',
@@ -34,7 +35,17 @@ class CorteCaja extends Model
         'diferencia'        => 'decimal:2',
     ];
 
-    // En CorteCaja.php
+    // Relaciones
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    public function ventas()
+    {
+        return $this->hasMany(Sale::class, 'corte_id');
+    }
+
     public function movimientos()
     {
         return $this->hasMany(MovimientoCaja::class, 'corte_id');
@@ -43,11 +54,13 @@ class CorteCaja extends Model
     // Helpers para filtrar por tipo
     public function gastos()
     {
-        return $this->movimientos()->where('tipo', 'gasto');
+        return $this->hasMany(MovimientoCaja::class, 'corte_id')
+                    ->where('tipo', 'gastos');
     }
 
     public function retiros()
     {
-        return $this->movimientos()->where('tipo', 'retiro');
+        return $this->hasMany(MovimientoCaja::class, 'corte_id')
+                    ->where('tipo', 'retiros');
     }
 }

@@ -15,13 +15,12 @@ class CajaController extends Controller
     public function corte()
     {
         // 1. Rango de tiempo del turno (Desde las 00:00 AM de hoy hasta ahora)
-        $inicioTurno = Carbon::today();
-        $finTurno = Carbon::now();
+        $userId = auth()->id();
 
         // 2. Consulta limpia usando name_snapshot de sale_items
         $desgloseServicios = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->whereBetween('sales.created_at', [$inicioTurno, $finTurno])
+            ->where('sales.user_id', $userId)
             ->select(
                 'sale_items.name_snapshot as servicio',
                 DB::raw('SUM(sale_items.quantity) as quantity'),
@@ -38,7 +37,8 @@ class CajaController extends Controller
 
         // Calculamos los ingresos REALES de la base de datos en Efectivo
         $ingresosEfectivo = DB::table('sales')
-            ->whereBetween('created_at', [$inicioTurno, $finTurno])
+            ->where('user_id', $userId)
+            ->whereNull('corte_id')
             ->where('payment_method', 'Efectivo')
             ->sum('total');
 
@@ -86,6 +86,7 @@ class CajaController extends Controller
 
         // 2. Guardamos el acumulador de manera local en la sesión del servidor
         MovimientoCaja::create([
+            'user_id'                => auth()->id(),  
             'tipo'                   => $tipo,
             'monto'                  => $monto,
             'concepto_o_responsable' => $request->input('concepto_o_responsable'),
@@ -95,7 +96,7 @@ class CajaController extends Controller
         // 3. Respondemos con éxito al JavaScript para que actualice la interfaz sin recargar
         return response()->json([
             'success' => true,
-            'message' => 'Movimiento registrado localmente',
+            'message' => 'Movimiento registrado correctamente',
             'monto' => $monto,
             'tipo' => $tipo
         ]);
@@ -103,13 +104,14 @@ class CajaController extends Controller
 
     public function generarCorte(Request $request)
     {
-        $inicioTurno = Carbon::today();
-        $finTurno    = Carbon::now();
+        $userId = auth()->id();
+        $nombreUsuario = auth()->user()->name;
 
         // Los mismos datos que ya usas en corte()
         $desgloseServicios = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->whereBetween('sales.created_at', [$inicioTurno, $finTurno])
+            ->where('sales.user_id', $userId)
+            ->whereNull('sales.corte_id') // Solo ventas del turno actual que no hayan sido cortadas
             ->select(
                 'sale_items.name_snapshot as servicio',
                 DB::raw('SUM(sale_items.quantity) as quantity'),
@@ -121,7 +123,8 @@ class CajaController extends Controller
         $totalBruto        = $desgloseServicios->sum('total_recaudado');
         $fondoInicial      = (float) ConfiguracionCaja::obtener()->fondo_inicial;
         $ingresosEfectivo  = DB::table('sales')
-                                ->whereBetween('created_at', [$inicioTurno, $finTurno])
+                                ->where('user_id', $userId)
+                                ->whereNull('corte_id')
                                 ->where('payment_method', 'Efectivo')
                                 ->sum('total');
         $retirosAutorizados = MovimientoCaja::delTurno()->retiros()->sum('monto');
@@ -140,6 +143,7 @@ class CajaController extends Controller
 
         // Guardamos el corte en BD
         $corte = CorteCaja::create([
+            'user_id'           => $userId,
             'folio'             => $folio,
             'fecha_cierre'      => now(),
             'fondo_inicial'     => $fondoInicial,
@@ -151,6 +155,12 @@ class CajaController extends Controller
             'diferencia'        => $diferencia,
             'facturado'         => false,
         ]);
+
+        // Asignamos el corte_id a todas las ventas del turno
+        DB::table('sales')
+            ->where('user_id', $userId)
+            ->whereNull('corte_id')
+            ->update(['corte_id' => $corte->id]);
 
         MovimientoCaja::delTurno()->update(['corte_id' => $corte->id]);
 
@@ -186,7 +196,8 @@ class CajaController extends Controller
             'horaCorte',
             'logoBase64',
             'negocio',
-            'folio'
+            'folio',
+            'nombreUsuario',
         ))->setPaper('a4', 'portrait');
 
         // Nombre del archivo con fecha y hora
@@ -202,12 +213,12 @@ class CajaController extends Controller
             'periodicidad' => 'required|string'
         ]);
 
-        $inicioTurno = Carbon::today();
-        $finTurno    = Carbon::now();
+        $userId = auth()->id();
 
-        // Traemos las ventas completas del turno (no sus items)
+        // Todas las ventas del día sin importar el empleado
         $ventas = DB::table('sales')
-            ->whereBetween('created_at', [$inicioTurno, $finTurno])
+            //->where('user_id', $userId)  -> Filtro para factura por turno
+            ->whereDate('created_at', today())
             ->where(function ($query) {
                 $query->whereNull('facturapi_id')
                     ->orWhere('facturapi_id', '');
@@ -221,7 +232,9 @@ class CajaController extends Controller
             ->get();
 
         if ($ventas->isEmpty()) {
-            return response()->json(['message' => 'No hay ventas en este turno para facturar.'], 422);
+            return response()->json([
+                'message' => 'No hay ventas del día para facturar.'
+            ], 422);
         }
 
         // Construimos un item por cada venta usando su reference como concepto
@@ -238,12 +251,14 @@ class CajaController extends Controller
             ];
         })->values()->toArray();
 
+        $cfg = ConfiguracionCaja::obtener();
+
         $cliente = [
             'legal_name' => 'PUBLICO EN GENERAL',
             'tax_id'     => 'XAXX010101000',
             'tax_system' => '616',
             'use'        => 'S01',
-            'address'    => ['zip' => '76800']
+            'address'    => ['zip' => $cfg->codigo_postal]
         ];
 
         try {
@@ -302,6 +317,7 @@ class CajaController extends Controller
             'direccion'      => 'nullable|string|max:255',
             'ciudad'         => 'nullable|string|max:255',
             'telefono'       => 'nullable|string|max:20',
+            'codigo_postal' => 'nullable|string|max:10',
         ]);
 
         $config = ConfiguracionCaja::obtener();
@@ -311,6 +327,7 @@ class CajaController extends Controller
             'direccion'      => $request->direccion,
             'ciudad'         => $request->ciudad,
             'telefono'       => $request->telefono,
+            'codigo_postal'  => $request->codigo_postal,
         ]);
 
         return response()->json([

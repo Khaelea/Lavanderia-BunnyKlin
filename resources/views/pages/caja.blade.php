@@ -636,6 +636,13 @@
                         value="{{ $config->telefono }}"
                         class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500">
                 </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-500 mb-1">Código Postal</label>
+                    <input type="text" id="config-cp"
+                        value="{{ $config->codigo_postal }}"
+                        maxlength="10"
+                        class="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-blue-500 font-mono">
+                </div>
             </div>
 
             <div id="config-mensaje" class="hidden text-xs text-center py-2 px-3 rounded-lg font-medium"></div>
@@ -1051,6 +1058,7 @@
                 direccion:      document.getElementById('config-direccion').value,
                 ciudad:         document.getElementById('config-ciudad').value,
                 telefono:       document.getElementById('config-telefono').value,
+                codigo_postal:  document.getElementById('config-cp').value,
             })
         })
         .then(res => res.json())

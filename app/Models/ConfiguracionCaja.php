@@ -14,6 +14,7 @@ class ConfiguracionCaja extends Model
         'direccion',
         'ciudad',
         'telefono',
+        'codigo_postal'
     ];
 
     protected $casts = [
@@ -32,6 +33,7 @@ class ConfiguracionCaja extends Model
             'direccion'      => 'Calle 5 de Mayo, Col. Centro',
             'ciudad'         => 'San Juan del Río, Qro.',
             'telefono'       => '427 123 4567',
+            'codigo_postal'  => '76800',
         ]);
     }
 }
