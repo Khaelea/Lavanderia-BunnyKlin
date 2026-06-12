@@ -52,10 +52,8 @@
 
                             <template x-for="venta in ventas" :key="venta.id">
                                 <tr class="border-b border-slate-50 hover:bg-blue-50 transition-colors">
-                                    <!-- 'reference' es el folio en tu tabla sales según la imagen común de estos sistemas -->
                                     <td class="py-4 px-4 font-bold text-[#1E55AA]" x-text="venta.reference || venta.id"></td>
                                     
-                                    <!-- Formatear la fecha que viene de la base de datos -->
                                     <td class="py-4 px-4 text-sm text-slate-500" x-text="new Date(venta.created_at).toLocaleString('es-MX')"></td>
                                     
                                     <td class="py-4 px-4 font-black text-right text-emerald-600" x-text="formatMoney(venta.total)"></td>
@@ -114,10 +112,8 @@
 
                 <form action="{{ route('venta.facturar') }}" method="POST">
                     @csrf
-                    <!-- Pasamos la venta seleccionada como JSON -->
                     <input type="hidden" name="venta_data" :value="JSON.stringify(ventaSeleccionada)">
                     
-                    <!-- Mostrar resumen de lo seleccionado (Opcional pero recomendado) -->
                     <template x-if="ventaSeleccionada">
                         <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
                             <p class="text-xs text-blue-600 font-bold uppercase">Venta Seleccionada:</p>
@@ -306,9 +302,12 @@
             },
 
             seleccionarVenta(venta) {
+                // Mapeamos los datos para que el controlador de factura los entienda
+                // Si en tu base de datos la relación se llama 'items', 
+                // la convertimos a 'detalles' para que tu FacturaController no falle.
                 this.ventaSeleccionada = {
                     ...venta,
-                    detalles: venta.items || venta.detalles
+                    detalles: venta.items || venta.detalles // Asegura compatibilidad
                 };
             },
 

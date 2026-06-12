@@ -238,6 +238,11 @@
     <table class="pie">
         <tr>
             <td class="firma-col">
+                <div style="margin-top: 8px;">
+                    <p style="font-size: 13px; font-weight: bold; color: #1e293b; margin: 4px 0 0 0;">
+                        {{ $nombreUsuario }}
+                    </p>
+                </div>
                 <div class="firma-linea"></div>
                 <div class="firma-label">Cajero Responsable</div>
             </td>

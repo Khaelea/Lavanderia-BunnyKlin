@@ -1,12 +1,13 @@
 @extends('layouts.app')
 
-@section('styles')
-    <link rel="stylesheet" href="{{ asset('css/pos.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
-@endsection
-
 @section('content')
-<div x-data='posSystem(@json($services), @json($supplies), @json($subscriptions), @json($clients))' x-cloak class="font-nunito relative min-h-screen pb-12 bg-[#F4F8FC] text-[#1E55AA] selection:bg-[#FFE63C] selection:text-[#1E55AA]">
+<link rel="stylesheet" href="{{ asset('css/pos.css') }}">
+<script src="{{ asset('js/pos.js?v=' . time()) }}"></script>
+<style>
+    [x-cloak] { display: none !important; }
+</style>
+
+<div x-data="posSystem({{ Js::from($services ?? []) }}, {{ Js::from($supplies ?? []) }}, {{ Js::from($subscriptions ?? []) }}, {{ Js::from($clients ?? []) }})" x-cloak class="font-nunito relative min-h-screen pb-12 bg-[#F4F8FC] text-[#1E55AA] selection:bg-[#FFE63C] selection:text-[#1E55AA]">
 
     {{-- Fondo Decorativo --}}
     <div class="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
@@ -14,9 +15,6 @@
         <div class="absolute bottom-[-15%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-[#1E55AA]/10 blur-[120px] animate-float-delayed"></div>
         <div class="absolute top-[20%] right-[15%] w-[25vw] h-[25vw] rounded-full bg-[#FFE63C]/10 blur-[80px] animate-float" style="animation-duration: 7s;"></div>
     </div>
-
-    {{-- MODALES --}}
-    @include('pos.modals')
 
     {{-- MAIN LAYOUT --}}
     <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 pt-8 relative z-10">
@@ -31,9 +29,12 @@
             <div class="lg:col-span-4">
                 @include('pos.cart')
             </div>
+            
         </div>
     </div>
-</div>
+    
+    {{-- MODALES NORMALES --}}
+    @include('pos.modals')
 
-<script src="{{ asset('js/pos.js') }}"></script>
+</div>
 @endsection

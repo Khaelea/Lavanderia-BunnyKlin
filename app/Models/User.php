@@ -21,6 +21,9 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
+        'status',
+        'confirmation_token',
     ];
 
     /**
@@ -44,5 +47,21 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Verifica si el usuario tiene rol de Administrador
+     */
+    public function isAdmin(): bool
+    {
+        return strtolower($this->role) === 'admin';
+    }
+
+    /**
+     * Verifica si el usuario tiene rol de Cajero
+     */
+    public function isCajero(): bool
+    {
+        return strtolower($this->role) === 'cajero';
     }
 }

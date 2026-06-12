@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('direccion')->nullable();
             $table->string('ciudad')->nullable();
             $table->string('telefono')->nullable();
+            $table->string('codigo_postal', 10)->nullable();
             $table->timestamps();
         });
 
@@ -26,6 +27,7 @@ return new class extends Migration
             'direccion'      => 'Calle 5 de Mayo, Col. Centro',
             'ciudad'         => 'San Juan del Río, Qro.',
             'telefono'       => '427 123 4567',
+            'codigo_postal'  => '76800',
             'created_at'     => now(),
             'updated_at'     => now(),
         ]);

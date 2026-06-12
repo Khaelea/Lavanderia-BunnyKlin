@@ -1,4 +1,4 @@
-    @extends('layouts.app')
+@extends('layouts.app')
 
     @section('content')
 
@@ -88,11 +88,15 @@
         {{-- HEADER --}}
         <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <h2 class="text-3xl font-black text-[#1E55AA] tracking-tight">Historial de Ventas</h2>
-            <button @click="borrarHistorialFiltrado()" x-show="ventasFiltradas.length > 0"
-                    class="inline-flex items-center gap-2 bg-white border-2 border-rose-100 text-rose-500 px-4 py-2 rounded-xl text-sm font-black hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all shadow-sm">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                <span x-text="tipoFiltro === 'dia' ? 'Limpiar ventas del día' : (tipoFiltro === 'mes' ? 'Limpiar ventas del mes' : 'Vaciar todo el historial')"></span>
-            </button>
+            
+            {{-- RESTRICCIÓN: Solo Admin ve el botón de vaciar historial --}}
+            @if(auth()->user()->isAdmin())
+                <button @click="borrarHistorialFiltrado()" x-show="ventasFiltradas.length > 0"
+                        class="inline-flex items-center gap-2 bg-white border-2 border-rose-100 text-rose-500 px-4 py-2 rounded-xl text-sm font-black hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                    <span x-text="tipoFiltro === 'dia' ? 'Limpiar ventas del día' : (tipoFiltro === 'mes' ? 'Limpiar ventas del mes' : 'Vaciar todo el historial')"></span>
+                </button>
+            @endif
         </div>
 
         {{-- FILTROS --}}
@@ -101,7 +105,6 @@
             <div class="flex flex-col sm:flex-row sm:items-center gap-3">
                 <span class="text-xs font-black text-slate-400 uppercase tracking-widest">Filtrar por:</span>
 
-                {{-- Selector Principal (Se queda igual) --}}
                 <select x-model="tipoFiltro" class="bg-[#F4F8FC] border-2 border-[#1E55AA]/10 text-[#1E55AA] text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-[#1E55AA] cursor-pointer">
                     <option value="todas">Historial Completo</option>
                     <option value="mes">Mes Específico</option>
@@ -109,25 +112,20 @@
                     <option value="folio">Folio</option>
                 </select>
 
-                {{-- Input Mes: Usamos x-ref="filtroMes" --}}
                 <input type="text" x-show="tipoFiltro === 'mes'" x-ref="filtroMes"
                     class="bg-[#FFE63C]/10 border-2 border-[#FFE63C]/50 text-[#1E55AA] text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-[#FFE63C] cursor-pointer"
                     placeholder="Seleccionar mes">
 
-
-                {{-- Input Día: Usamos x-ref="filtroDia" --}}
                 <input type="text" x-show="tipoFiltro === 'dia'" x-ref="filtroDia"
                     class="bg-emerald-50 border-2 border-emerald-200 text-emerald-700 text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-emerald-400 cursor-pointer"
                     placeholder="Seleccionar día">
 
-                {{-- NUEVO: Input Folio --}}
                 <input type="text" x-show="tipoFiltro === 'folio'" x-model.debounce.500ms="valorFiltro"
                     class="bg-rose-50 border-2 border-rose-100 text-rose-600 text-sm font-bold rounded-xl px-4 py-2 focus:outline-none focus:border-rose-400"
                     placeholder="Ej. BK-0001">
 
             </div>
 
-            {{-- ESTO SE QUEDA IGUAL (Ya funciona perfecto gracias a que Laravel manda totalFiltro) --}}
             <div class="inline-flex flex-col items-end rounded-xl bg-emerald-50 px-5 py-2 border border-emerald-200">
                 <span class="text-[10px] font-black text-emerald-600 uppercase tracking-widest" x-text="tipoFiltro === 'dia' ? 'Total del Día' : (tipoFiltro === 'mes' ? 'Total del Mes' : 'Total Histórico')"></span>
                 <span class="text-xl font-black text-emerald-700" x-text="formatMoney(totalFiltro)"></span>
@@ -142,7 +140,6 @@
             <div class="lg:col-span-8">
                 <div class="rounded-2xl border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-sm sm:px-7.5 xl:pb-1 flex flex-col justify-between min-h-[500px]">
 
-                    {{-- Contenedor de la Tabla --}}
                     <div class="max-w-full overflow-x-auto">
                         <table class="w-full table-auto">
                             <thead>
@@ -151,13 +148,18 @@
                                     <th class="py-4 px-4 font-black">Fecha</th>
                                     <th class="py-4 px-4 font-black">Servicios</th>
                                     <th class="py-4 px-4 font-black text-right">Total</th>
-                                    <th class="py-4 px-4 font-black text-center">Acción</th>
+                                    
+                                    {{-- RESTRICCIÓN: Ocultar la cabecera de Acción si es cajero --}}
+                                    @if(auth()->user()->isAdmin())
+                                        <th class="py-4 px-4 font-black text-center">Acción</th>
+                                    @endif
                                 </tr>
                             </thead>
                             <tbody>
                                 <template x-if="ventasFiltradas.length === 0">
                                     <tr>
-                                        <td colspan="5" class="py-12 text-center text-slate-400 font-bold text-lg"
+                                        {{-- Ajustamos el colspan dinámicamente según el rol para no descuadrar la tabla --}}
+                                        <td colspan="{{ auth()->user()->isAdmin() ? '5' : '4' }}" class="py-12 text-center text-slate-400 font-bold text-lg"
                                             x-text="tipoFiltro === 'todas' ? 'Aún no hay ventas registradas.' : 'No hay ventas en esta fecha.'"></td>
                                     </tr>
                                 </template>
@@ -179,21 +181,23 @@
                                             </div>
                                         </td>
                                         <td class="py-4 px-4 font-black text-[#1E55AA] text-right text-lg" x-text="formatMoney(venta.total)"></td>
-                                        <td class="py-4 px-4 text-center">
-                                            <button @click.stop="borrarVenta(venta.id)" class="inline-flex items-center justify-center rounded-xl bg-rose-50 border-2 border-rose-100 py-1.5 px-3 text-xs font-bold text-rose-500 hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all shadow-sm">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
-                                            </button>
-                                        </td>
+                                        
+                                        {{-- RESTRICCIÓN: Solo el Admin ve y puede usar el botón de eliminar individual --}}
+                                        @if(auth()->user()->isAdmin())
+                                            <td class="py-4 px-4 text-center">
+                                                <button @click.stop="borrarVenta(venta.id)" class="inline-flex items-center justify-center rounded-xl bg-rose-50 border-2 border-rose-100 py-1.5 px-3 text-xs font-bold text-rose-500 hover:bg-rose-500 hover:border-rose-500 hover:text-white transition-all shadow-sm">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                </button>
+                                            </td>
+                                        @endif
                                     </tr>
                                 </template>
                             </tbody>
                         </table>
                     </div>
 
-                    {{-- NUEVO: Controles de Paginación --}}
                     <div class="flex items-center justify-between border-t border-slate-100 bg-white pt-4 pb-2 mt-4" x-show="pagination.last_page > 1">
 
-                        {{-- Vista para Escritorio --}}
                         <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
                             <div>
                                 <p class="text-sm text-slate-500 font-bold">
@@ -220,7 +224,6 @@
                             </div>
                         </div>
 
-                        {{-- Vista para Móviles --}}
                         <div class="flex flex-1 justify-between sm:hidden w-full">
                             <button @click="if(pagination.links.url) cargarDatos(pagination.links.url)"
                                     :disabled="!pagination.links.url"
@@ -234,12 +237,10 @@
                             </button>
                         </div>
                     </div>
-                    {{-- FIN Controles de Paginación --}}
 
                 </div>
             </div>
 
-            {{-- VISTA PREVIA DEL TICKET --}}
             <div class="lg:col-span-4 relative">
                 <div class="sticky top-8 bg-white border-2 border-slate-100 rounded-[2rem] shadow-sm flex flex-col overflow-hidden h-[calc(100vh-8rem)]">
 
@@ -255,7 +256,6 @@
                         <p class="font-bold text-slate-500">Haz clic en una venta para previsualizar el ticket aquí.</p>
                     </div>
 
-                    {{-- TICKET PREVIEW --}}
                     <div x-show="ticketActivo" class="flex-1 overflow-y-auto p-4 custom-scrollbar bg-slate-50 flex justify-center items-start">
                         <div class="bg-white p-4 shadow-sm w-full max-w-[250px] font-mono text-black border border-slate-200">
                             <div class="text-center mb-3">
@@ -310,4 +310,4 @@
 
     <script src="{{ asset('js/historial.js') }}"></script>
 
-@endsection
+    @endsection
