@@ -167,7 +167,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/suscripciones', function () {
         $subscriptions = Subscription::query()->latest()->get();
-        $totalSubscribedClients = Client::query()->whereNotNull('subscription_id')->where('end_subscription', '>=', now())->count();
+
+        $totalSubscribedClients = Client::query()
+        ->whereHas('clientSubscriptions', function ($query) {
+            // Filtramos en la tabla 'client_subscriptions'
+            $query->where('status', 'active')
+                  ->whereDate('end_date', '>=', today());
+        })
+        ->count();
+
         return view('pages.suscripciones', [
             'title' => 'Suscripciones',
             'subscriptions' => $subscriptions,
