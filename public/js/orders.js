@@ -224,6 +224,8 @@ document.addEventListener("alpine:init", () => {
                             1,
                             result.order.client,
                         );
+                    } else {
+                        this.availableClients.unshift(result.order.client);
                     }
                 }
 
