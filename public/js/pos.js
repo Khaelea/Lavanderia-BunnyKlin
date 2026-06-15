@@ -1,7 +1,7 @@
 function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
     const adaptarCatalogo = (data, category) => {
         if (!data || !Array.isArray(data)) return [];
-        return data.map(item => ({
+        return data.map((item) => ({
             id: item.id,
             clave_prodserv: item.clave_prodserv || null,
             name: item.name,
@@ -16,7 +16,9 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
             is_for_orders: item.is_for_orders ? true : false,
         }));
     };
-    
+
+    console.log({ clientsDb });
+
     return {
         activeMode: "sale",
         showPreConfirmacion: false,
@@ -43,7 +45,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
         errorPago: "",
         debugStatus: "",
         tiempoFormateado: "",
-        
+
         // Formulario de clientes unificado y avanzado
         clienteForm: {
             tipoRegistro: "nuevo",
@@ -61,16 +63,23 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
         subscriptions: adaptarCatalogo(subscriptionsDb, "subscriptions"),
         clients: clientsDb || [],
         cart: [],
-        
+
         intentId: null,
         pollingActive: false,
 
         formatMoney(amount) {
-            return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
+            return new Intl.NumberFormat("es-MX", {
+                style: "currency",
+                currency: "MXN",
+            }).format(amount);
         },
 
         get total() {
-            return this.cart.reduce((sum, item) => sum + item.price * (parseFloat(item.quantity) || 0), 0);
+            return this.cart.reduce(
+                (sum, item) =>
+                    sum + item.price * (parseFloat(item.quantity) || 0),
+                0,
+            );
         },
 
         toggleMode(mode) {
@@ -79,23 +88,37 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
         handleItemClick(item, category) {
             if (this.activeMode === "edit") this.openEditModal(item, category);
-            else if (this.activeMode === "delete") this.openDeleteModal(item, category);
+            else if (this.activeMode === "delete")
+                this.openDeleteModal(item, category);
             else this.addToCart(item, category);
         },
 
         addToCart(item, category) {
-            let found = this.cart.find(i => i.id === item.id && i.category === category);
+            let found = this.cart.find(
+                (i) => i.id === item.id && i.category === category,
+            );
             if (found) found.quantity++;
-            else this.cart.push({ ...item, category, quantity: 1, cart_id: category + "-" + item.id });
+            else
+                this.cart.push({
+                    ...item,
+                    category,
+                    quantity: 1,
+                    cart_id: category + "-" + item.id,
+                });
         },
 
         updateQty(index, amount) {
-            this.cart[index].quantity = (parseInt(this.cart[index].quantity) || 0) + amount;
+            this.cart[index].quantity =
+                (parseInt(this.cart[index].quantity) || 0) + amount;
             if (this.cart[index].quantity <= 0) this.removeItem(index);
         },
 
-        removeItem(index) { this.cart.splice(index, 1); },
-        clearCart() { this.cart = []; },
+        removeItem(index) {
+            this.cart.splice(index, 1);
+        },
+        clearCart() {
+            this.cart = [];
+        },
 
         // ========== MODALES DE ÍTEMS ==========
         openAddModal(category) {
@@ -173,10 +196,13 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                 is_for_orders: item.is_for_orders ? true : false,
             };
         },
-        closeModal() { this.itemModal.open = false; },
+        closeModal() {
+            this.itemModal.open = false;
+        },
 
         async saveItem() {
-            if (!this.itemModal.name.trim() || this.itemModal.price === "") return;
+            if (!this.itemModal.name.trim() || this.itemModal.price === "")
+                return;
             let priceVal = parseFloat(this.itemModal.price) || 0;
             const payload = {
                 id: this.itemModal.id,
@@ -188,23 +214,32 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                 stock: this.itemModal.stock,
                 unit: this.itemModal.unit,
                 duration_months: this.itemModal.duration_months,
-                kilos_per_month: parseFloat(this.itemModal.kilos_per_month) || 0,
+                kilos_per_month:
+                    parseFloat(this.itemModal.kilos_per_month) || 0,
                 is_active: this.itemModal.is_active,
                 is_for_orders: this.itemModal.is_for_orders ? true : false,
             };
-            
-            let targetList = this.itemModal.category === "services" ? this.services :
-                             this.itemModal.category === "supplies" ? this.supplies :
-                             this.itemModal.category === "subscriptions" ? this.subscriptions : 
-                             this.itemModal.category === "extras" ? this.extras : null;
-                             
+
+            let targetList =
+                this.itemModal.category === "services"
+                    ? this.services
+                    : this.itemModal.category === "supplies"
+                      ? this.supplies
+                      : this.itemModal.category === "subscriptions"
+                        ? this.subscriptions
+                        : this.itemModal.category === "extras"
+                          ? this.extras
+                          : null;
+
             if (!targetList) return;
             try {
                 const headers = {
                     "Content-Type": "application/json",
-                    "Accept": "application/json",
+                    Accept: "application/json",
                     "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
                 };
                 if (this.itemModal.mode === "add") {
                     const response = await fetch("/catalogo/guardar", {
@@ -215,12 +250,20 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
                     if (!response.ok) {
                         const errorCrudo = await response.text();
-                        console.error("🚨 DETALLE DEL ERROR DE LARAVEL:", errorCrudo);
+                        console.error(
+                            "🚨 DETALLE DEL ERROR DE LARAVEL:",
+                            errorCrudo,
+                        );
                         try {
                             const errorJson = JSON.parse(errorCrudo);
-                            alert("Error del servidor: " + (errorJson.message || errorJson.error));
+                            alert(
+                                "Error del servidor: " +
+                                    (errorJson.message || errorJson.error),
+                            );
                         } catch (e) {
-                            alert("Error crítico del servidor. Revisa la consola.");
+                            alert(
+                                "Error crítico del servidor. Revisa la consola.",
+                            );
                         }
                         return;
                     }
@@ -233,26 +276,46 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                         category: this.itemModal.category,
                     });
                 } else {
-                    const res = await fetch("/catalogo/actualizar", { method: "PUT", headers, body: JSON.stringify(payload) });
+                    const res = await fetch("/catalogo/actualizar", {
+                        method: "PUT",
+                        headers,
+                        body: JSON.stringify(payload),
+                    });
                     if (!res.ok) throw new Error("Error al actualizar");
                     const data = await res.json();
-                    let idx = targetList.findIndex(i => i.id === this.itemModal.id);
+                    let idx = targetList.findIndex(
+                        (i) => i.id === this.itemModal.id,
+                    );
                     if (idx !== -1) {
                         targetList[idx].name = data.item.name;
                         targetList[idx].price = parseFloat(data.item.price);
-                        targetList[idx].description = data.item.description || null;
+                        targetList[idx].description =
+                            data.item.description || null;
                         targetList[idx].stock = data.item.stock || null;
                         targetList[idx].unit = data.item.unit || null;
-                        targetList[idx].duration_months = data.item.duration_months || null;
-                        targetList[idx].kilos_per_month = data.item.kilos_per_month || null;
-                        targetList[idx].clave_prodserv = data.item.clave_prodserv || null;
-                        targetList[idx].is_active = data.item.is_active ? true : false;
-                        targetList[idx].is_for_orders = data.item.is_for_orders ? true : false;
-                        
-                        let cartIdx = this.cart.findIndex(c => c.id === this.itemModal.id && c.category === this.itemModal.category);
+                        targetList[idx].duration_months =
+                            data.item.duration_months || null;
+                        targetList[idx].kilos_per_month =
+                            data.item.kilos_per_month || null;
+                        targetList[idx].clave_prodserv =
+                            data.item.clave_prodserv || null;
+                        targetList[idx].is_active = data.item.is_active
+                            ? true
+                            : false;
+                        targetList[idx].is_for_orders = data.item.is_for_orders
+                            ? true
+                            : false;
+
+                        let cartIdx = this.cart.findIndex(
+                            (c) =>
+                                c.id === this.itemModal.id &&
+                                c.category === this.itemModal.category,
+                        );
                         if (cartIdx !== -1) {
                             this.cart[cartIdx].name = data.item.name;
-                            this.cart[cartIdx].price = parseFloat(data.item.price);
+                            this.cart[cartIdx].price = parseFloat(
+                                data.item.price,
+                            );
                         }
                     }
                 }
@@ -264,30 +327,45 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
         },
 
         async deleteItem() {
-            const payload = { id: this.itemModal.id, category: this.itemModal.category };
+            const payload = {
+                id: this.itemModal.id,
+                category: this.itemModal.category,
+            };
             try {
                 const res = await fetch("/catalogo/eliminar", {
                     method: "DELETE",
                     headers: {
                         "Content-Type": "application/json",
-                        "Accept": "application/json",
+                        Accept: "application/json",
                         "X-Requested-With": "XMLHttpRequest",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                        "X-CSRF-TOKEN": document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute("content"),
                     },
                     body: JSON.stringify(payload),
                 });
                 if (!res.ok) throw new Error("Error al eliminar");
-                
-                let targetList = this.itemModal.category === "services" ? this.services :
-                                 this.itemModal.category === "supplies" ? this.supplies :
-                                 this.itemModal.category === "subscriptions" ? this.subscriptions : 
-                                 this.itemModal.category === "extras" ? this.extras : null;
-                                 
+
+                let targetList =
+                    this.itemModal.category === "services"
+                        ? this.services
+                        : this.itemModal.category === "supplies"
+                          ? this.supplies
+                          : this.itemModal.category === "subscriptions"
+                            ? this.subscriptions
+                            : this.itemModal.category === "extras"
+                              ? this.extras
+                              : null;
+
                 if (targetList) {
-                    let idx = targetList.findIndex(i => i.id === this.itemModal.id);
+                    let idx = targetList.findIndex(
+                        (i) => i.id === this.itemModal.id,
+                    );
                     if (idx !== -1) {
                         targetList.splice(idx, 1);
-                        this.cart = this.cart.filter(c => c.id !== this.itemModal.id);
+                        this.cart = this.cart.filter(
+                            (c) => c.id !== this.itemModal.id,
+                        );
                     }
                 }
                 this.closeModal();
@@ -303,7 +381,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
             const payload = {
                 id: service.id,
-                category: service.category || "services", 
+                category: service.category || "services",
                 is_active: nuevoEstado,
             };
 
@@ -313,7 +391,9 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                     headers: {
                         "Content-Type": "application/json",
                         Accept: "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                        "X-CSRF-TOKEN": document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute("content"),
                     },
                     body: JSON.stringify(payload),
                 });
@@ -329,7 +409,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
         },
 
         // ========== FLUJO DE COBRO ==========
-        checkout() { 
+        checkout() {
             if (this.cart.length) {
                 const today = new Date();
                 const nextMonth = new Date();
@@ -337,16 +417,23 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
                 this.clienteForm.inicio = today.toISOString().split("T")[0];
                 this.clienteForm.fin = nextMonth.toISOString().split("T")[0];
-                this.showPreConfirmacion = true; 
+                this.showPreConfirmacion = true;
             }
         },
-        cancelarCheckout() { this.showPreConfirmacion = false; },
-        cerrarConfirmacion() { this.showConfirmacion = false; },
+        cancelarCheckout() {
+            this.showPreConfirmacion = false;
+        },
+        cerrarConfirmacion() {
+            this.showConfirmacion = false;
+        },
 
         mostrarError(mensaje) {
-            if (typeof mensaje !== 'string') mensaje = String(mensaje);
-            if (mensaje.startsWith('<') || mensaje.includes('Unexpected token')) {
-                mensaje = 'Error inesperado. Verifique la conexión.';
+            if (typeof mensaje !== "string") mensaje = String(mensaje);
+            if (
+                mensaje.startsWith("<") ||
+                mensaje.includes("Unexpected token")
+            ) {
+                mensaje = "Error inesperado. Verifique la conexión.";
             }
             this.errorPago = mensaje;
             this.showErrorModal = true;
@@ -368,7 +455,9 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
         async confirmarCheckout(metodo = "Terminal") {
             if (metodo === "Terminal") {
                 if (this.total < 5) {
-                    this.mostrarError("El monto mínimo es de $5.00 MXN para procesar tarjeta.");
+                    this.mostrarError(
+                        "El monto mínimo es de $5.00 MXN para procesar tarjeta.",
+                    );
                     return;
                 }
 
@@ -378,51 +467,70 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                 this.debugStatus = "Conectando...";
 
                 try {
-                    const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
+                    const token = document
+                        .querySelector('meta[name="csrf-token"]')
+                        ?.getAttribute("content");
                     if (!token) throw new Error("Token CSRF no encontrado");
 
                     const response = await fetch("/terminal/cobrar", {
                         method: "POST",
                         headers: {
                             "Content-Type": "application/json",
-                            "Accept": "application/json",
+                            Accept: "application/json",
                             "X-Requested-With": "XMLHttpRequest",
-                            "X-CSRF-TOKEN": token
+                            "X-CSRF-TOKEN": token,
                         },
-                        body: JSON.stringify({ total: this.total })
+                        body: JSON.stringify({ total: this.total }),
                     });
 
                     if (!response.ok) {
-                        const ct = response.headers.get('content-type');
-                        if (ct && ct.includes('application/json')) {
+                        const ct = response.headers.get("content-type");
+                        if (ct && ct.includes("application/json")) {
                             const err = await response.json();
-                            throw new Error(err.error || err.message || "Error del servidor");
+                            throw new Error(
+                                err.error ||
+                                    err.message ||
+                                    "Error del servidor",
+                            );
                         } else {
-                            throw new Error("El servidor no respondió correctamente.");
+                            throw new Error(
+                                "El servidor no respondió correctamente.",
+                            );
                         }
                     }
 
                     const data = await response.json();
-                    if (!data.success) throw new Error(data.error || "No se pudo iniciar el cobro");
+                    if (!data.success)
+                        throw new Error(
+                            data.error || "No se pudo iniciar el cobro",
+                        );
 
                     this.intentId = data.payment_intent_id;
                     let pagoFinalizado = false;
                     let intentos = 0;
                     const MAX_INTENTOS = 60;
 
-                    while (!pagoFinalizado && this.pollingActive && intentos < MAX_INTENTOS) {
+                    while (
+                        !pagoFinalizado &&
+                        this.pollingActive &&
+                        intentos < MAX_INTENTOS
+                    ) {
                         intentos++;
-                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        await new Promise((resolve) =>
+                            setTimeout(resolve, 1000),
+                        );
 
                         let statusData = null;
                         try {
-                            const statusRes = await fetch(`/terminal/estado/${this.intentId}`);
+                            const statusRes = await fetch(
+                                `/terminal/estado/${this.intentId}`,
+                            );
                             if (!statusRes.ok) {
                                 this.debugStatus = `Error HTTP ${statusRes.status} (intento ${intentos})`;
                                 continue;
                             }
-                            const ct = statusRes.headers.get('content-type');
-                            if (!ct || !ct.includes('application/json')) {
+                            const ct = statusRes.headers.get("content-type");
+                            if (!ct || !ct.includes("application/json")) {
                                 this.debugStatus = `Respuesta no JSON (intento ${intentos})`;
                                 continue;
                             }
@@ -433,34 +541,56 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                         }
 
                         if (!statusData.success) {
-                            if (statusData.status === 'RETRY') {
+                            if (statusData.status === "RETRY") {
                                 this.debugStatus = `Reintentando (intento ${intentos})`;
                                 continue;
                             }
                             pagoFinalizado = true;
-                            throw new Error(statusData.error || 'Error al consultar el estado.');
+                            throw new Error(
+                                statusData.error ||
+                                    "Error al consultar el estado.",
+                            );
                         }
 
-                        const status = (statusData.status || '').toUpperCase();
-                        const paymentStatus = (statusData.payment_status || '').toUpperCase();
+                        const status = (statusData.status || "").toUpperCase();
+                        const paymentStatus = (
+                            statusData.payment_status || ""
+                        ).toUpperCase();
                         this.debugStatus = `Estado: ${status} / Pago: ${paymentStatus} (intento ${intentos})`;
 
-                        if (['OPEN', 'ON_TERMINAL', 'PROCESSING', 'READY'].includes(status)) {
+                        if (
+                            [
+                                "OPEN",
+                                "ON_TERMINAL",
+                                "PROCESSING",
+                                "READY",
+                            ].includes(status)
+                        ) {
                             continue;
                         }
 
                         pagoFinalizado = true;
 
-                        if (status === 'FINISHED' && paymentStatus === 'APPROVED') {
+                        if (
+                            status === "FINISHED" &&
+                            paymentStatus === "APPROVED"
+                        ) {
                             this.esperandoTerminal = false;
                             this.pollingActive = false;
                             this.debugStatus = "";
                             await this.finalizarVentaLocal("Tarjeta");
                         } else {
-                            let msj = 'El pago no fue aprobado.';
-                            if (status === 'CANCELED' || status === 'ABANDONED') msj = 'Pago cancelado en la terminal.';
-                            else if (status === 'FINISHED' && paymentStatus === 'REJECTED') msj = 'Tarjeta rechazada. Intente otro método.';
-                            else if (status === 'ERROR') msj = 'Error en la terminal. Intente nuevamente.';
+                            let msj = "El pago no fue aprobado.";
+                            if (status === "CANCELED" || status === "ABANDONED")
+                                msj = "Pago cancelado en la terminal.";
+                            else if (
+                                status === "FINISHED" &&
+                                paymentStatus === "REJECTED"
+                            )
+                                msj = "Tarjeta rechazada. Intente otro método.";
+                            else if (status === "ERROR")
+                                msj =
+                                    "Error en la terminal. Intente nuevamente.";
                             throw new Error(msj);
                         }
                     }
@@ -485,16 +615,26 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
         async finalizarVentaLocal(metodo) {
             try {
                 let clientIdForSale = null;
-                const hasSubscription = this.cart.some(item => item.category === "subscriptions");
+                const hasSubscription = this.cart.some(
+                    (item) => item.category === "subscriptions",
+                );
 
                 // --- LÓGICA DE CLIENTES (Base de Datos Real de tus compañeros) ---
                 if (hasSubscription) {
-                    if (this.clienteForm.tipoRegistro === "nuevo" && !this.clienteForm.nombre.trim()) {
+                    if (
+                        this.clienteForm.tipoRegistro === "nuevo" &&
+                        !this.clienteForm.nombre.trim()
+                    ) {
                         alert("Por favor ingresa el nombre del cliente.");
                         return;
                     }
-                    if (this.clienteForm.tipoRegistro === "existente" && !this.clienteForm.cliente_id) {
-                        alert("Por favor selecciona un cliente válido de la lista.");
+                    if (
+                        this.clienteForm.tipoRegistro === "existente" &&
+                        !this.clienteForm.cliente_id
+                    ) {
+                        alert(
+                            "Por favor selecciona un cliente válido de la lista.",
+                        );
                         return;
                     }
 
@@ -508,16 +648,19 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                     total: parseFloat(this.total).toFixed(2),
                     metodo_pago: metodo,
                     detalles: this.cart,
-                    cliente: this.clienteForm.nombre.trim() || "Público en General"
+                    cliente:
+                        this.clienteForm.nombre.trim() || "Público en General",
                 };
 
                 const responseVenta = await fetch("/ventas/checkout", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Accept": "application/json",
+                        Accept: "application/json",
                         "X-Requested-With": "XMLHttpRequest",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                        "X-CSRF-TOKEN": document
+                            .querySelector('meta[name="csrf-token"]')
+                            .getAttribute("content"),
                     },
                     body: JSON.stringify(payloadVenta),
                 });
@@ -525,7 +668,9 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                 if (!responseVenta.ok) {
                     const errorCrudo = await responseVenta.text();
                     console.error("🚨 ERROR LARAVEL (Venta):", errorCrudo);
-                    throw new Error("Error al guardar la venta en la base de datos");
+                    throw new Error(
+                        "Error al guardar la venta en la base de datos",
+                    );
                 }
 
                 const dataVenta = await responseVenta.json();
@@ -538,9 +683,12 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                 // --- CONTROL DE INVENTARIO (Reducción de Stock de Insumos) ---
                 this.cart.forEach((itemCart) => {
                     if (itemCart.category === "supplies") {
-                        const indexOriginal = this.supplies.findIndex(s => s.id === itemCart.id);
+                        const indexOriginal = this.supplies.findIndex(
+                            (s) => s.id === itemCart.id,
+                        );
                         if (indexOriginal !== -1) {
-                            this.supplies[indexOriginal].stock -= itemCart.quantity;
+                            this.supplies[indexOriginal].stock -=
+                                itemCart.quantity;
                             if (this.supplies[indexOriginal].stock < 0) {
                                 this.supplies[indexOriginal].stock = 0;
                             }
@@ -550,8 +698,13 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
                 // --- FINALIZAR PROCESO (Estructuración del ticket de éxito) ---
                 this.ultimaVenta = {
-                    folio: dataVenta.venta?.reference || dataVenta.venta?.folio || "BK-" + Date.now().toString().slice(-4),
-                    fecha: new Date().toLocaleString("es-MX", { timeZone: "America/Mexico_City" }),
+                    folio:
+                        dataVenta.venta?.reference ||
+                        dataVenta.venta?.folio ||
+                        "BK-" + Date.now().toString().slice(-4),
+                    fecha: new Date().toLocaleString("es-MX", {
+                        timeZone: "America/Mexico_City",
+                    }),
                     total: dataVenta.venta?.total || this.total,
                 };
 
@@ -570,24 +723,32 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                     inicio: new Date().toISOString().split("T")[0],
                     fin: "",
                 };
-
             } catch (error) {
                 console.error("Error al guardar en BD:", error);
                 this.esperandoTerminal = false;
-                this.mostrarError(error.message || "Hubo un problema al procesar el cobro.");
+                this.mostrarError(
+                    error.message || "Hubo un problema al procesar el cobro.",
+                );
             }
         },
 
         registrarClienteLocal() {
-            let subscripcionComprada = this.cart.find(item => item.category === "subscriptions");
-            let planName = subscripcionComprada ? subscripcionComprada.name : "Ninguna";
-            
+            let subscripcionComprada = this.cart.find(
+                (item) => item.category === "subscriptions",
+            );
+            let planName = subscripcionComprada
+                ? subscripcionComprada.name
+                : "Ninguna";
+
             let prendas = this.cart
-                .filter(i => i.category === "services")
-                .map(i => i.quantity + "x " + i.name)
+                .filter((i) => i.category === "services")
+                .map((i) => i.quantity + "x " + i.name)
                 .join(", ");
 
-            let clientes = JSON.parse(localStorage.getItem("lavanderia_clientes_final_v2")) || [];
+            let clientes =
+                JSON.parse(
+                    localStorage.getItem("lavanderia_clientes_final_v2"),
+                ) || [];
             clientes.unshift({
                 id: Date.now(),
                 name: this.clienteForm.nombre,
@@ -595,13 +756,19 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                 items: prendas || "Solo pago de plan",
                 status: "Pendiente",
                 subscription: planName,
-                subscriptionEndDate: planName !== "Ninguna" ? this.clienteForm.fin : "",
+                subscriptionEndDate:
+                    planName !== "Ninguna" ? this.clienteForm.fin : "",
             });
-            localStorage.setItem("lavanderia_clientes_final_v2", JSON.stringify(clientes));
+            localStorage.setItem(
+                "lavanderia_clientes_final_v2",
+                JSON.stringify(clientes),
+            );
         },
 
         async procesarClientePOS() {
-            const subItem = this.cart.find(item => item.category === "subscriptions");
+            const subItem = this.cart.find(
+                (item) => item.category === "subscriptions",
+            );
             let payload = {};
 
             if (this.clienteForm.tipoRegistro === "nuevo") {
@@ -614,7 +781,9 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                     wantsBilling: false,
                 };
             } else {
-                const clienteExistente = this.clients.find(c => c.id === parseInt(this.clienteForm.cliente_id));
+                const clienteExistente = this.clients.find(
+                    (c) => c.id === parseInt(this.clienteForm.cliente_id),
+                );
                 payload = {
                     name: clienteExistente.name,
                     phone: clienteExistente.phone,
@@ -625,15 +794,21 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
                 };
             }
 
-            const url = this.clienteForm.tipoRegistro === "nuevo" ? "/api/clientes" : `/api/clientes/${this.clienteForm.cliente_id}`;
-            const method = this.clienteForm.tipoRegistro === "nuevo" ? "POST" : "PUT";
+            const url =
+                this.clienteForm.tipoRegistro === "nuevo"
+                    ? "/api/clientes"
+                    : `/api/clientes/${this.clienteForm.cliente_id}`;
+            const method =
+                this.clienteForm.tipoRegistro === "nuevo" ? "POST" : "PUT";
 
             const response = await fetch(url, {
                 method: method,
                 headers: {
                     "Content-Type": "application/json",
                     Accept: "application/json",
-                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                    "X-CSRF-TOKEN": document
+                        .querySelector('meta[name="csrf-token"]')
+                        .getAttribute("content"),
                 },
                 body: JSON.stringify(payload),
             });
@@ -641,7 +816,9 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
             if (!response.ok) {
                 const err = await response.json();
                 console.error("Error en validación del cliente:", err);
-                throw new Error("No se pudo guardar la información del cliente. Verifica los datos.");
+                throw new Error(
+                    "No se pudo guardar la información del cliente. Verifica los datos.",
+                );
             }
 
             const data = await response.json();
@@ -655,8 +832,9 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
         vincularClienteId() {
             const clienteEncontrado = this.clients.find((c) => {
-                const formatoTexto = c.name + " (" + (c.phone || "Sin tel") + ")";
-                return formatoTexto === this.clienteForm.cliente_text; // Soporta cliente_text o cliente_texto según input
+                const formatoTexto =
+                    c.name + " (" + (c.phone || "Sin tel") + ")";
+                return formatoTexto === this.clienteForm.cliente_texto;
             });
 
             if (clienteEncontrado) {
