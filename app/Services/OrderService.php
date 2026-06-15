@@ -13,13 +13,15 @@ class OrderService
     {
         return DB::transaction(function () use ($datos, $order) {
 
-            // 1. MANEJO DEL CLIENTE
             $clientId = $datos['client_id'] ?? null;
 
-            if (!$clientId && !empty($datos['phone'])) {
+            // Si no viene un ID, significa que es un cliente nuevo que escribió a mano
+            if (!$clientId && !empty($datos['name'])) {
+                // Buscamos si ya existe por nombre exacto para no duplicar por error,
+                // si no existe, lo creamos guardando su teléfono (pueda ser null o string)
                 $client = Client::query()->firstOrCreate(
-                    ['phone' => $datos['phone']],
-                    ['name' => $datos['name'] ?: 'Cliente Mostrador']
+                    ['name' => $datos['name']],
+                    ['phone' => $datos['phone'] ?? null]
                 );
                 $clientId = $client->id;
             }
@@ -69,6 +71,7 @@ class OrderService
             // 3. Creamos la venta financiera (Cabecera del ticket)
             // Nota: Al no pasar 'reference', el modelo Sale usará su método boot() para generar el folio 'BK-XXXX'
             $sale = Sale::query()->create([
+                'reference'      => $datos['reference'],
                 'client_id'      => $clientId,
                 'total'          => $datos['total'],
                 'payment_method' => 'Pendiente',

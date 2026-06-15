@@ -13,13 +13,13 @@ class ClientController extends Controller
     {
     }
 
-    // Carga inicial para AlpineJS
     public function apiInit()
     {
-        // Traemos a los clientes con su relación de suscripción cargada
-        $clients = Client::with('subscription')->latest()->get();
+        $clients = Client::with([
+            'currentSubscription.plan',
+            'currentSubscription.currentCycle'
+        ])->latest()->get();
 
-        // Traemos solo los planes activos
         $subscriptions = Subscription::query()->where('is_active', true)->get();
 
         return response()->json([

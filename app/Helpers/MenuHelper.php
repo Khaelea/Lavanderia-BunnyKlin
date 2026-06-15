@@ -45,7 +45,7 @@ class MenuHelper
                         'admin_only' => true, // <-- EJEMPLO: Oculto para cajeros
                     ],
                     [
-                        'name' => 'Inventario (Insumos)',
+                        'name' => 'Insumos',
                         'icon' => 'task',
                         'path' => '/insumos',
                         'admin_only' => true, // <-- EJEMPLO: Oculto para cajeros
@@ -67,7 +67,7 @@ class MenuHelper
                         'path' => '/pedidos',
                     ],
                     [
-                        'name' => 'Clientes y Suscripciones',
+                        'name' => 'Clientes',
                         'icon' => 'user-profile',
                         'path' => '/clientes',
                     ],
