@@ -1067,7 +1067,7 @@
                 fondoInicial = data.fondo_inicial;
                 actualizarInterfazCaja();
 
-                mensaje.innerText = '✅ Configuración guardada correctamente.';
+                mensaje.innerText = 'Configuración guardada correctamente.';
                 mensaje.className = 'text-xs text-center py-2 px-3 rounded-lg font-medium bg-emerald-50 text-emerald-700';
                 mensaje.classList.remove('hidden');
 

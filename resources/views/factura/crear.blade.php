@@ -1,8 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div x-data="historialSystem()" class="mx-auto max-w-screen-2xl p-4 md:p-6 font-nunito">
-    
+<div x-data="historialSystem()" class="mx-auto max-w-screen-2xl p-4 md:p-6 font-nunito">    
     {{-- Notificaciones de éxito/error arriba de todo --}}
     @if(session('success'))
         <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
@@ -121,21 +120,88 @@
                             <p class="text-sm text-emerald-600 font-bold" x-text="'Total: ' + formatMoney(ventaSeleccionada.total)"></p>
                         </div>
                     </template>
+
+                    <div class="mb-5 p-4 bg-blue-50 border border-blue-200 rounded-xl relative">
+
+                        <h3 class="font-bold text-blue-700 mb-1">
+                            Cliente Registrado
+                        </h3>
+
+                        <p class="text-sm text-blue-600 mb-3">
+                            Busca por nombre, RFC o correo para autocompletar los datos fiscales.
+                        </p>
+
+                        <input
+                            type="text"
+                            x-model="busquedaCliente"
+                            @input.debounce.500ms="buscarClientes()"
+                            placeholder="Buscar cliente..."
+                            class="w-full border border-blue-300 rounded-lg p-2.5 bg-white"
+                        >
+
+                        <!-- Resultados -->
+                        <div
+                            x-show="clientesEncontrados.length > 0"
+                            class="absolute left-4 right-4 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto"
+                        >
+
+                            <template
+                                x-for="cliente in clientesEncontrados"
+                                :key="cliente.id"
+                            >
+
+                                <div
+                                    @click="seleccionarCliente(cliente)"
+                                    class="p-3 border-b hover:bg-blue-50 cursor-pointer"
+                                >
+
+                                    <div
+                                        class="font-semibold"
+                                        x-text="cliente.name"
+                                    ></div>
+
+                                    <div
+                                        class="text-sm text-slate-500"
+                                        x-text="cliente.rfc"
+                                    ></div>
+
+                                </div>
+
+                            </template>
+
+                        </div>
+
+                        <div
+                            x-show="form.legal_name"
+                            class="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg"
+                        >
+                            <span class="text-green-700 text-sm font-semibold">
+                                Cliente seleccionado:
+                            </span>
+
+                            <span
+                                class="text-green-800"
+                                x-text="form.legal_name"
+                            ></span>
+                        </div>
+
+                    </div>
                     
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Nombre Legal / Razón Social</label>
-                            <input type="text" name="legal_name" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Ej. Juan Pérez" required>
+                            <input type="text" name="legal_name" x-model="form.legal_name" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="Ej. Juan Pérez" required>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">RFC</label>
-                            <input type="text" name="tax_id" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="XAXX010101000" required>
+                            <input type="text" name="tax_id" x-model="form.tax_id" class="w-full border border-slate-300 rounded-xl p-2.5 focus:ring-2 focus:ring-blue-500 outline-none transition-all" placeholder="XAXX010101000" required>
                         </div>
 
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Régimen Fiscal</label>
-                            <select name="tax_system" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white">
+                            <select name="tax_system" x-model="form.tax_system" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white">
+                                <option value="NA" selected> Selecciona el Régimen Fiscal</option>
                                 <option value="601">601 - General de Ley Personas Morales</option>
                                 <option value="603">603 - Personas Morales con Fines no Lucrativos</option>
                                 <option value="605">605 - Sueldos y Salarios e Ingresos Asimilados a Salarios</option>
@@ -164,7 +230,8 @@
                         <div>
                             <label class="block text-sm font-bold text-gray-700 mb-1">Uso de CFDI</label>
                             <select name="use_cfdi" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white">
-                                <option value="G01" selected>G01 - Adquisición de mercancías</option>
+                                <option value="NA" selected> Selecciona el CFDI</option>
+                                <option value="G01">G01 - Adquisición de mercancías</option>
                                 <option value="G02">G02 - Devoluciones, descuentos o bonificaciones</option>
                                 <option value="G03">G03 - Gastos en general</option>
                                 
@@ -199,7 +266,8 @@
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Método de Pago</label>
                                 <select name="payment_method" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white">
-                                    <option value="PUE" selected>PUE - Una sola exhibición</option>
+                                    <option value="NA" selected>Selecciona un método de pago</option>
+                                    <option value="PUE">PUE - Una sola exhibición</option>
                                     <option value="PPD">PPD - Parcialidades o Diferido</option>
                                 </select>
                             </div>
@@ -207,7 +275,8 @@
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Forma de Pago</label>
                                 <select name="payment_form" class="w-full border border-slate-300 rounded-xl p-2.5 bg-white">
-                                    <option value="01" selected>01 - Efectivo</option>
+                                    <option value="NA" selected>Selecciona una forma de pago</option>
+                                    <option value="01">01 - Efectivo</option>
                                     <option value="02">02 - Cheque nominativo</option>
                                     <option value="03">03 - Transferencia electrónica de fondos</option>
                                     <option value="04">04 - Tarjeta de crédito</option>
@@ -236,11 +305,11 @@
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Email</label>
-                                <input type="email" name="email" class="w-full border border-slate-300 rounded-xl p-2.5" required>
+                                <input type="email" name="email" x-model="form.email" class="w-full border border-slate-300 rounded-xl p-2.5" required>
                             </div>
                             <div>
                                 <label class="block text-sm font-bold text-gray-700 mb-1">Código Postal</label>
-                                <input type="text" name="zip" class="w-full border border-slate-300 rounded-xl p-2.5" required>
+                                <input type="text" name="zip" x-model="form.zip" class="w-full border border-slate-300 rounded-xl p-2.5" required>
                             </div>
                         </div>
 
@@ -266,8 +335,21 @@
             ventas: [],
             ventaSeleccionada: null,
             cargando: true,
+            error: false,
             currentPage: 1,
             lastPage: 1,
+            totalFiltro: 0,
+
+            clientesEncontrados: [],
+            busquedaCliente: '',
+
+            form: {
+                legal_name: '',
+                tax_id: '',
+                tax_system: '',
+                email: '',
+                zip: ''
+            },
 
             async init() {
                 this.cargarVentas();
@@ -275,21 +357,28 @@
 
             async cargarVentas(page = 1) {
                 this.cargando = true;
+                this.error = false;
+
                 try {
-                    // Pasamos el número de página a la API de Laravel
                     const response = await fetch(`/ventas/api-historial?page=${page}`);
                     if (!response.ok) throw new Error('Error al obtener datos');
-                    
+
                     const resultado = await response.json();
-                    
-                    // Al usar ->paginate(), los datos reales vienen dentro de .data
-                    this.ventas = resultado.data || [];
-                    this.currentPage = resultado.current_page || 1;
-                    this.lastPage = resultado.last_page || 1;
+                    const paginador = resultado.paginacion;
+
+                    if (!paginador) {
+                        throw new Error('Respuesta sin estructura de paginación esperada');
+                    }
+
+                    this.ventas = paginador.data ?? [];
+                    this.currentPage = paginador.current_page ?? 1;
+                    this.lastPage = paginador.last_page ?? 1;
+                    this.totalFiltro = resultado.total_filtro ?? 0;
 
                 } catch (error) {
                     console.error("Error cargando el historial:", error);
                     this.ventas = [];
+                    this.error = true;
                 } finally {
                     this.cargando = false;
                 }
@@ -316,7 +405,37 @@
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2 
                 });
-            }
+            },
+
+            async buscarClientes() {
+                if (this.busquedaCliente.length < 3) {
+                    this.clientesEncontrados = [];
+                    return;
+                }
+
+                try {
+                    const response = await fetch(
+                        `/clientes/buscar?search=${encodeURIComponent(this.busquedaCliente)}`
+                    );
+
+                    this.clientesEncontrados = await response.json();
+                } catch (error) {
+                    console.error(error);
+                    this.clientesEncontrados = [];
+                }
+            },
+
+            seleccionarCliente(cliente) {
+                this.form.legal_name = cliente.name;
+                this.form.tax_id = cliente.rfc;
+                this.form.tax_system = cliente.regimen_fiscal;
+                this.form.email = cliente.email;
+                this.form.zip = cliente.codigo_postal;
+
+                this.busquedaCliente = cliente.name;
+
+                this.clientesEncontrados = [];
+            },
         }
     }
 </script>

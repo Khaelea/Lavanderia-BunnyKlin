@@ -117,4 +117,24 @@ class ClientController extends Controller
         $this->clientService->eliminarCliente($client);
         return response()->json(['success' => true]);
     }
+
+    public function buscar(Request $request)
+    {
+        $search = $request->search;
+
+        $clientes = Client::where('name', 'like', "%{$search}%")
+            ->orWhere('rfc', 'like', "%{$search}%")
+            ->orWhere('email', 'like', "%{$search}%")
+            ->limit(10)
+            ->get([
+                'id',
+                'name',
+                'rfc',
+                'regimen_fiscal',
+                'email',
+                'codigo_postal'
+            ]);
+
+        return response()->json($clientes);
+    }
 }
