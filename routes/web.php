@@ -211,6 +211,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/factura/crear', [FacturaController::class, 'create'])->name('factura.crear');
     Route::post('/factura/crear', [FacturaController::class, 'facturar'])->name('venta.facturar');
     Route::get('/factura/archivo/{id}/{tipo?}', [FacturaController::class, 'descargarArchivo'])->name('factura.archivo');
+    Route::get('/clientes/buscar', [ClientController::class, 'buscar']);
 
     Route::get('/calendar', function () { return view('pages.calender', ['title' => 'Calendar']); })->name('calendar');
     Route::get('/profile', function () { return view('pages.profile', ['title' => 'Profile']); })->name('profile');

@@ -55,12 +55,12 @@ class CorteCaja extends Model
     public function gastos()
     {
         return $this->hasMany(MovimientoCaja::class, 'corte_id')
-                    ->where('tipo', 'gastos');
+                    ->where('tipo', 'gasto');
     }
 
     public function retiros()
     {
         return $this->hasMany(MovimientoCaja::class, 'corte_id')
-                    ->where('tipo', 'retiros');
+                    ->where('tipo', 'retiro');
     }
 }
