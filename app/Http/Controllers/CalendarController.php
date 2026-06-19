@@ -11,7 +11,7 @@ class CalendarController extends Controller
 {
     public function index(Request $request)
     {
-        // 1. Validamos y obtenemos mes y año. 
+        // 1. Validamos y obtenemos mes y año.
         $month = (int) $request->get('month', date('n'));
         $year = (int) $request->get('year', date('Y'));
 
@@ -28,13 +28,13 @@ class CalendarController extends Controller
             'currentYear'      => $date->year,
             'daysInMonth'      => $date->daysInMonth,
             'firstDayOfWeek'   => $date->startOfMonth()->dayOfWeek,
-            
+
             // Navegación exacta para los botones superiores
             'prevMonth'        => $prevDate->month,
             'prevYear'         => $prevDate->year,
             'nextMonth'        => $nextDate->month,
             'nextYear'         => $nextDate->year,
-            
+
             'today'            => Carbon::now()->day,
             'isCurrentMonth'   => ($date->isSameMonth(Carbon::now())),
             'years'            => range(Carbon::now()->year - 5, Carbon::now()->year + 5),

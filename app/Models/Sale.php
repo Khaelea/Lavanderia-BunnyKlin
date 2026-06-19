@@ -31,9 +31,8 @@ class Sale extends Model
             }
 
             if (! $sale->reference) {
-                // Aquí ya usamos transacciones, pero como tu Service ya envuelve
-                // todo en una transacción, esta funcionará perfecto.
                 $lastSale = static::query()
+                    ->where('reference', 'LIKE', 'BK-%')
                     ->lockForUpdate()
                     ->latest('id')
                     ->first();
@@ -47,12 +46,13 @@ class Sale extends Model
 
                 $sale->reference = 'BK-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
             }
+
         });
     }
 
-    public function detalles() : HasMany
+    public function detalles(): HasMany
     {
-        // Nota: Asegúrate de que el modelo de los items se llame 'SaleItem' 
+        // Nota: Asegúrate de que el modelo de los items se llame 'SaleItem'
         // o cámbialo por el nombre correcto de tu modelo de detalles.
         return $this->hasMany(SaleItem::class, 'sale_id');
     }

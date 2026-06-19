@@ -11,12 +11,12 @@ class SalesService
     {
         return DB::transaction(function () use ($datos) {
 
-            // AQUÍ ESTABA EL PROBLEMA: No se estaba guardando el user_id
+            // Fusionamos ambos cambios: Guardamos al Cajero (user_id) y al Cliente (client_id)
             $sale = Sale::query()->create([
                 'total'          => $datos['total'],
                 'payment_method' => $datos['metodo_pago'],
-                'user_id'        => $datos['user_id'] ?? null, // <-- ESTA LÍNEA ES LA MAGIA
-                // 'client_id'   => null // (Asegúrate de mapearlo si lo recibes en $datos)
+                'user_id'        => $datos['user_id'] ?? null, 
+                'client_id'      => $datos['client_id'] ?? null,
             ]);
 
             $mapaModelos = [
@@ -42,7 +42,7 @@ class SalesService
                     'subtotal'       => $item['price'] * $item['quantity'],
                 ]);
 
-                // 2. NUEVO: Reducir el stock SÓLO si el artículo es un insumo (supply)
+                // 2. Reducir el stock SÓLO si el artículo es un insumo (supply)
                 if ($item['category'] === 'supplies') {
                     $supply = \App\Models\Supply::query()->find($item['id']);
 

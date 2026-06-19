@@ -698,10 +698,7 @@ function posSystem(servicesDb, suppliesDb, subscriptionsDb, clientsDb) {
 
                 // --- FINALIZAR PROCESO (Estructuración del ticket de éxito) ---
                 this.ultimaVenta = {
-                    folio:
-                        dataVenta.venta?.reference ||
-                        dataVenta.venta?.folio ||
-                        "BK-" + Date.now().toString().slice(-4),
+                    folio: dataVenta.venta?.reference || "BK-ERR",
                     fecha: new Date().toLocaleString("es-MX", {
                         timeZone: "America/Mexico_City",
                     }),
