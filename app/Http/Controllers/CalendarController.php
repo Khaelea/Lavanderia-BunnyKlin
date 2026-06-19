@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use App\Models\Order;
+use App\Models\ClientSubscription;
 
 class CalendarController extends Controller
 {
@@ -38,6 +40,37 @@ class CalendarController extends Controller
             'years'            => range(Carbon::now()->year - 5, Carbon::now()->year + 5),
         ];
 
+        $orders = Order::with('client')
+            ->whereNotNull('delivery_date')
+            ->orderBy('delivery_date')
+            ->get()
+            ->map(fn($o) => [
+                'id'           => $o->id,
+                'reference'    => $o->reference,
+                'name'         => $o->client->name ?? 'Sin cliente',
+                'service'      => $o->details ?? 'Servicio',
+                'status'       => $o->status,
+                'arrival_date'  => $o->arrival_date  ? \Carbon\Carbon::parse($o->arrival_date)->toDateString()  : null,
+                'delivery_date' => $o->delivery_date ? \Carbon\Carbon::parse($o->delivery_date)->toDateString() : null,
+                'total'        => $o->total_price,
+            ]);
+
+        $subscriptions = ClientSubscription::with(['client', 'subscription'])
+            ->whereNotNull('end_date')
+            ->where('status', 'active')
+            ->orderBy('end_date')
+            ->get()
+            ->map(fn($s) => [
+                'id'                  => $s->id,
+                'name'                => $s->client->name ?? 'Sin cliente',
+                'subscription'        => $s->subscription->name ?? 'Plan',
+                'price'               => $s->subscription->price ?? 0,
+                'kilos_per_month'     => $s->subscription->kilos_per_month ?? 0,
+                'start_date'          => $s->start_date?->toDateString(),
+                'subscriptionEndDate' => $s->end_date?->toDateString(),
+                'status'              => $s->status,
+            ]);
+
         // --- CAMBIO CLAVE AQUÍ ---
         if ($request->ajax()) {
             return response()->json([
@@ -52,6 +85,6 @@ class CalendarController extends Controller
             ]);
         }
 
-        return view('calendar.index', compact('data'));
+        return view('calendar.index', compact('data', 'orders', 'subscriptions'));
     }
 }

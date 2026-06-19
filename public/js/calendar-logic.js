@@ -28,28 +28,39 @@ function changeDate(month, year) {
 }
 
 function renderEventsFromLocalStorage() {
-    const ventas = JSON.parse(localStorage.getItem('historial_ventas')) || [];
-    const clientes = JSON.parse(localStorage.getItem('lavanderia_clientes_final_v2')) || [];
-    const pedidos = JSON.parse(localStorage.getItem('lavanderia_encargos_v3')) || [];
+    const pedidos = window.CalendarData.orders || [];
+    const clientes = window.CalendarData.subscriptions || [];
+
+    pedidos.forEach(p => {
+        const selector = `[data-date="${p.delivery_date}"] .event-container`;
+        const celda = document.querySelector(selector);
+        console.log(`selector: ${selector} → celda:`, celda);
+    });
 
     // 1. Limpiar SOLO las celdas del calendario
     document.querySelectorAll('.event-container').forEach(el => el.innerHTML = '');
-    
-    // 2. Delegar TODA la barra lateral a filtrarPorEstructura
-    // Esta función ya limpia, ordena y pinta la barra lateral por ti.
-    filtrarPorEstructura('todos');
 
     // 3. PINTAR SOLO EN LAS CELDAS DEL CALENDARIO
-    
-    // VENTAS
-    ventas.forEach(v => {
-        const partes = v.fecha.split(',')[0].split('/');
-        const fechaKey = `${partes[2]}-${partes[1]}-${partes[0]}`;
-        const celda = document.querySelector(`[data-date="${fechaKey}"] .event-container`);
-        if (celda) {
-            const btn = createBadge(v.cliente, '💰', 'bg-green-100 text-green-700 border-green-200');
-            btn.onclick = () => window.dispatchEvent(new CustomEvent('open-calendar-modal', { detail: { titulo: 'Ticket ' + v.folio, cliente: v.cliente, fecha: v.fecha, total: v.total, detalles: v.detalles } }));
-            celda.appendChild(btn);
+
+    // PEDIDOS (Solo en calendario)
+    pedidos.forEach(p => {
+        if (p.delivery_date) {
+            const celda = document.querySelector(`[data-date="${p.delivery_date}"] .event-container`);
+            if (celda) {
+                const btn = createBadge(p.name, '🚚', 'bg-amber-100 text-amber-700 border-amber-200');
+                btn.onclick = () => abrirModalPedido(p, 'Entrega');
+                celda.appendChild(btn);
+            }
+        }
+            
+            // Badge adicional en arrival_date (color distinto para diferenciar)
+        if (p.arrival_date && p.arrival_date !== p.delivery_date) {
+            const celda = document.querySelector(`[data-date="${p.arrival_date}"] .event-container`);
+            if (celda) {
+                const btn = createBadge(p.name, '📦', 'bg-blue-100 text-blue-700 border-blue-200');
+                btn.onclick = () => abrirModalPedido(p, 'Recepción');
+                celda.appendChild(btn);
+            }
         }
     });
 
@@ -59,25 +70,25 @@ function renderEventsFromLocalStorage() {
             const celda = document.querySelector(`[data-date="${c.subscriptionEndDate}"] .event-container`);
             if (celda) {
                 const btn = createBadge(c.name, '✨', 'bg-pink-100 text-pink-700 border-pink-200');
-                btn.onclick = () => window.dispatchEvent(new CustomEvent('open-calendar-modal', { detail: { titulo: 'Vencimiento Plan', cliente: c.name, fecha: c.subscriptionEndDate, total: c.subscription, detalles: [{ name: 'Pendiente: ' + c.items, quantity: 1, price: 0 }] } }));
+                btn.onclick = () => window.dispatchEvent(new CustomEvent('open-subscription-modal', {
+                    detail: {
+                        nombre: c.name,
+                        plan:   c.subscription,
+                        precio: c.price,
+                        kilos:  c.kilos_per_month,
+                        inicio: c.start_date,
+                        fin:    c.subscriptionEndDate,
+                        status: c.status,
+                    }
+                }));
                 celda.appendChild(btn);
             }
         }
-    });
-
-    // PEDIDOS (Solo en calendario)
-    pedidos.forEach(p => {
-        if (p.deliveryDate) {
-            const celda = document.querySelector(`[data-date="${p.deliveryDate}"] .event-container`);
-            if (celda) {
-                const btn = createBadge(p.name, '🚚', 'bg-amber-100 text-amber-700 border-amber-200');
-                btn.onclick = () => abrirModalPedido(p, 'Entrega');
-                celda.appendChild(btn);
-            }
-            // NOTA: Se eliminó el bloque que pintaba en el sidebar aquí 
-            // porque ya lo hace filtrarPorEstructura('todos').
-        }
-    });
+    }); 
+    
+    // 2. Delegar TODA la barra lateral a filtrarPorEstructura
+    // Esta función ya limpia, ordena y pinta la barra lateral por ti.
+    filtrarPorEstructura('todos');
 }
 
 function createBadge(text, icon, colors) {
@@ -89,7 +100,17 @@ function createBadge(text, icon, colors) {
 
 function abrirModalPedido(p, t) {
     window.dispatchEvent(new CustomEvent('open-calendar-modal', {
-        detail: { titulo: t + ': ' + p.ticket, cliente: p.name, fechaLlegada: p.arrivalDate || 'No registrada', fechaEntrega: p.deliveryDate || 'Pendiente', total: p.total, detalles: [{ name: p.service, quantity: 1, price: p.total }, { name: 'Estado: ' + p.status, quantity: 1, price: 0 }] }
+        detail: {
+            titulo:       t + ': ' + p.reference,
+            cliente:      p.name,
+            fechaLlegada: p.arrival_date  || 'No registrada',
+            fechaEntrega: p.delivery_date || 'Pendiente',
+            total:        p.total,
+            detalles:     [
+                { name: p.service, quantity: 1, price: p.total },
+                { name: p.status, quantity: 1, price: 0 }
+            ]
+        }
     }));
 }
 
@@ -101,9 +122,9 @@ function filtrarPorEstructura(categoria) {
     // Esto borra cualquier tarjeta que se haya quedado pegada de ejecuciones anteriores
     sidebar.innerHTML = ''; 
 
-    const pedidos = JSON.parse(localStorage.getItem('lavanderia_encargos_v3')) || [];
-    const clientes = JSON.parse(localStorage.getItem('lavanderia_clientes_final_v2')) || [];
-    const hoy = new Date().toISOString().split('T')[0];
+    const pedidos  = window.CalendarData.orders        || [];
+    const clientes = window.CalendarData.subscriptions || [];
+    const hoy      = new Date().toISOString().split('T')[0];
 
     actualizarEstiloBotones(categoria);
 
@@ -113,9 +134,9 @@ function filtrarPorEstructura(categoria) {
     if (categoria === 'todos' || categoria === 'pedidos') {
         pedidos.forEach(p => {
             // Validamos que tenga fecha y sea futura/hoy
-            if (p.deliveryDate && p.deliveryDate >= hoy) {
+            if (p.delivery_date && p.delivery_date >= hoy) {
                 // Usamos el ticket o un ID único para evitar duplicar por error de storage
-                itemsAmostrar.push({ ...p, type: 'pedido', fechaOrden: p.deliveryDate });
+                itemsAmostrar.push({ ...p, type: 'pedido', fechaOrden: p.delivery_date });
             }
         });
     }
@@ -137,9 +158,7 @@ function filtrarPorEstructura(categoria) {
         return;
     }
 
-    itemsAmostrar.forEach(item => {
-        agregarTarjetaSidebar(item, item.type);
-    });
+    itemsAmostrar.forEach(item => agregarTarjetaSidebar(item, item.type));
 }
 
 function agregarTarjetaSidebar(item, tipo) {
@@ -150,7 +169,7 @@ function agregarTarjetaSidebar(item, tipo) {
     const esPedido = tipo === 'pedido';
     const titulo = esPedido ? item.name : `${item.name} (Plan)`;
     const subtitulo = esPedido ? item.service : `Vence: ${item.subscription}`;
-    const fecha = esPedido ? item.deliveryDate : item.subscriptionEndDate;
+    const fecha = esPedido ? item.delivery_date : item.subscriptionEndDate;
     const status = esPedido ? item.status : 'Suscrito';
     const colorClass = esPedido
         ? (item.status === 'Listo' ? 'border-l-green-500' : 'border-l-amber-500')
@@ -175,13 +194,15 @@ function agregarTarjetaSidebar(item, tipo) {
         if (esPedido) {
             abrirModalPedido(item, 'Evento Próximo');
         } else {
-            window.dispatchEvent(new CustomEvent('open-calendar-modal', {
+            window.dispatchEvent(new CustomEvent('open-subscription-modal', {
                 detail: {
-                    titulo: 'Vencimiento Plan',
-                    cliente: item.name,
-                    fechaEntrega: item.subscriptionEndDate,
-                    total: item.subscription,
-                    detalles: [{ name: 'Membresía Activa', quantity: 1, price: 0 }]
+                    nombre: item.name,
+                    plan:   item.subscription,
+                    precio: item.price,
+                    kilos:  item.kilos_per_month,
+                    inicio: item.start_date,
+                    fin:    item.subscriptionEndDate,
+                    status: item.status,
                 }
             }));
         }
@@ -208,4 +229,6 @@ function actualizarEstiloBotones(categoria) {
     }
 }
 
-document.addEventListener('DOMContentLoaded', renderEventsFromLocalStorage);
+document.addEventListener('alpine:init', () => {
+    Alpine.nextTick(() => renderEventsFromLocalStorage());
+});
