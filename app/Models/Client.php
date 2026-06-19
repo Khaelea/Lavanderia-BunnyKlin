@@ -123,4 +123,9 @@ class Client extends Model
     {
         return $this->hasMany(Order::class);
     }
+
+    public function subscriptions()
+    {
+        return $this->hasMany(ClienteSubscription::class);
+    }
 }

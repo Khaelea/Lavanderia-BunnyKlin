@@ -132,15 +132,33 @@
 
                 <div class="bg-slate-50 dark:bg-gray-900 rounded-3xl p-6 border border-slate-100 dark:border-gray-700">
                     <p class="text-[10px] text-slate-400 uppercase font-black mb-4">Resumen de Servicio</p>
-                    <template x-for="item in info.detalles">
-                        <div class="flex justify-between text-sm mb-2 dark:text-gray-300">
-                            <span class="font-medium" x-text="item.quantity + 'x ' + item.name"></span>
-                            <span class="font-bold text-slate-400" x-text="item.price > 0 ? '$' + item.price : ''"></span>
-                        </div>
-                    </template>
+                    
+                    {{-- Servicio --}}
+                    <div class="mb-4">
+                        <p class="text-[9px] text-slate-400 uppercase font-black mb-1">Detalles</p>
+                        <p class="text-sm font-bold dark:text-gray-200" x-text="info.detalles[0].name"></p>
+                    </div>
+
+                    {{-- Status --}}
+                    <div class="mb-4">
+                        <p class="text-[9px] text-slate-400 uppercase font-black mb-1">Estado</p>
+                        <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase"
+                            :class="{
+                                'bg-green-100 text-green-700': info.detalles[1].name === 'Listo',
+                                'bg-amber-100 text-amber-700': info.detalles[1].name === 'Recibido',
+                                'bg-blue-100 text-blue-700':   info.detalles[1].name === 'En proceso',
+                                'bg-slate-100 text-slate-500': !['Listo','Recibido','En proceso'].includes(info.detalles[1].name)
+                            }"
+                            x-text="info.detalles[1].name">
+                        </span>
+                    </div>
+
+                    {{-- Total --}}
                     <div class="border-t dark:border-gray-700 mt-4 pt-4 flex justify-between items-center">
                         <span class="text-xs font-bold text-slate-400 uppercase">Total</span>
-                        <span class="text-xl font-black text-blue-600 dark:text-blue-400" x-text="typeof info.total === 'number' ? '$' + info.total.toFixed(2) : info.total"></span>
+                        <span class="text-xl font-black text-blue-600 dark:text-blue-400" 
+                            x-text="typeof info.total === 'number' ? '$' + info.total.toFixed(2) : '$' + info.total">
+                        </span>
                     </div>
                 </div>
             </div>
@@ -152,13 +170,102 @@
             </div>
         </div>
     </div>
+
+    <!-- MODAL SUSCRIPCIÓN -->
+    <div x-data="{ openSub: false, sub: {} }"
+        @open-subscription-modal.window="sub = $event.detail; openSub = true"
+        x-show="openSub"
+        x-cloak
+        class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
+        x-transition:opacity>
+
+        <div @click.away="openSub = false"
+            class="bg-white dark:bg-gray-800 rounded-[2rem] shadow-2xl max-w-sm w-full overflow-hidden border dark:border-gray-700">
+
+            {{-- Header morado --}}
+            <div class="p-6 border-b dark:border-gray-700 flex justify-between items-center bg-purple-50 dark:bg-purple-900/30">
+                <div class="flex items-center gap-3">
+                    <div class="p-2 bg-purple-100 dark:bg-purple-800 rounded-xl text-purple-600 dark:text-purple-300">
+                        ✨
+                    </div>
+                    <h3 class="font-black text-purple-800 dark:text-purple-200 uppercase tracking-tighter">Suscripción Activa</h3>
+                </div>
+                <button @click="openSub = false" class="text-slate-400 hover:text-slate-600 transition-colors">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <div class="p-8 space-y-6">
+                {{-- Cliente --}}
+                <div class="flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center text-purple-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-slate-400 uppercase font-black">Cliente</p>
+                        <p class="text-base font-bold dark:text-gray-200" x-text="sub.nombre"></p>
+                    </div>
+                </div>
+
+                {{-- Plan y Status --}}
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-2xl border border-purple-100 dark:border-purple-800">
+                        <p class="text-[9px] text-purple-400 uppercase font-black mb-1">Plan</p>
+                        <p class="text-sm font-bold text-purple-700 dark:text-purple-300" x-text="sub.plan"></p>
+                    </div>
+                    <div class="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-2xl border border-purple-100 dark:border-purple-800">
+                        <p class="text-[9px] text-purple-400 uppercase font-black mb-1">Status</p>
+                        <p class="text-sm font-bold text-purple-700 dark:text-purple-300" x-text="sub.status"></p>
+                    </div>
+                </div>
+
+                {{-- Fechas --}}
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-slate-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-slate-100 dark:border-gray-700">
+                        <p class="text-[9px] text-slate-400 uppercase font-black mb-1">Inicio</p>
+                        <p class="text-xs font-bold dark:text-gray-200" x-text="sub.inicio || 'No registrada'"></p>
+                    </div>
+                    <div class="bg-slate-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-slate-100 dark:border-gray-700">
+                        <p class="text-[9px] text-slate-400 uppercase font-black mb-1">Vencimiento</p>
+                        <p class="text-xs font-bold dark:text-gray-200" x-text="sub.fin || 'Sin fecha'"></p>
+                    </div>
+                </div>
+
+                {{-- Detalles del plan --}}
+                <div class="bg-purple-50 dark:bg-purple-900/20 rounded-3xl p-6 border border-purple-100 dark:border-purple-800">
+                    <p class="text-[10px] text-purple-400 uppercase font-black mb-4">Detalles del Plan</p>
+                    <div class="flex justify-between text-sm mb-2 dark:text-gray-300">
+                        <span class="font-medium text-slate-600 dark:text-slate-400">Kilos por mes</span>
+                        <span class="font-bold text-purple-600" x-text="sub.kilos + ' kg'"></span>
+                    </div>
+                    <div class="border-t border-purple-100 dark:border-purple-800 mt-4 pt-4 flex justify-between items-center">
+                        <span class="text-xs font-bold text-slate-400 uppercase">Precio</span>
+                        <span class="text-xl font-black text-purple-600 dark:text-purple-400" x-text="'$' + Number(sub.precio).toFixed(2)"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-6 bg-purple-50/50 dark:bg-purple-900/20">
+                <button @click="openSub = false" class="w-full bg-purple-600 hover:scale-[1.02] text-white py-4 rounded-2xl font-bold transition-all shadow-xl active:scale-95">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
     const CALENDAR_URL = "{{ route('calendar.index') }}";
+
+    window.CalendarData = {
+        orders:         @json($orders),
+        subscriptions:  @json($subscriptions),
+    };
+
+    console.log('CalendarData:', window.CalendarData);
 </script>
 @push('scripts')
-    <script src="{{ asset('js/calendar-logic.js') }}"></script>
+    <script src="{{ asset('js/calendar-logic.js') }}?v={{ time() }}"></script>
 @endpush
 
 <style>

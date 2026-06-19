@@ -26,6 +26,11 @@ class ClientSubscription extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function subscription()
+    {
+        return $this->belongsTo(Subscription::class);
+    }
+
     public function plan()
     {
         // Le llamamos 'plan' a la relación para no confundir con la clase
