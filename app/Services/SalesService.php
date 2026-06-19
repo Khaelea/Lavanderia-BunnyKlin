@@ -14,7 +14,7 @@ class SalesService
             $sale = Sale::query()->create([
                 'total'          => $datos['total'],
                 'payment_method' => $datos['metodo_pago'],
-                // 'client_id'   => null // (Asegúrate de mapearlo si lo recibes en $datos)
+                'client_id'      => $datos['client_id'] ?? null,
             ]);
 
             $mapaModelos = [
