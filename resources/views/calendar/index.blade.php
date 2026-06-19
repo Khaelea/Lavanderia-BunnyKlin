@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-<div x-data="{ openDetail: false, info: {} }" 
+<div x-data="{ openDetail: false, info: {} }"
      @open-calendar-modal.window="info = $event.detail; openDetail = true"
      class="max-w-[1600px] mx-auto p-4 lg:p-6">
 
@@ -10,12 +10,12 @@
         <div>
             <h1 class="text-3xl font-black text-[#1E55AA]">Calendario</h1>
         </div>
-        
+
         <!-- Controles de Navegación -->
         <!-- Este es tu botón en la parte superior derecha, fuera del calendario -->
         <div class="flex items-center bg-white dark:bg-gray-800 rounded-xl shadow-sm border p-1">
             <!-- Botón Anterior: ID btn-prev -->
-            <button id="btn-prev" onclick="changeDate(this.getAttribute('data-m'), this.getAttribute('data-y'))" 
+            <button id="btn-prev" onclick="changeDate(this.getAttribute('data-m'), this.getAttribute('data-y'))"
                     data-m="{{ $data['prevMonth'] }}" data-y="{{ $data['prevYear'] }}"
                     class="p-2 hover:bg-gray-100 rounded-lg transition text-gray-600">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
@@ -27,7 +27,7 @@
             </span>
 
             <!-- Botón Siguiente: ID btn-next -->
-            <button id="btn-next" onclick="changeDate(this.getAttribute('data-m'), this.getAttribute('data-y'))" 
+            <button id="btn-next" onclick="changeDate(this.getAttribute('data-m'), this.getAttribute('data-y'))"
                     data-m="{{ $data['nextMonth'] }}" data-y="{{ $data['nextYear'] }}"
                     class="p-2 hover:bg-gray-100 rounded-lg transition text-gray-600">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
@@ -37,7 +37,7 @@
 
     <!-- GRID PRINCIPAL -->
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         <!-- COLUMNA IZQUIERDA: EL CALENDARIO (8/12) -->
         <div class="lg:col-span-8 bg-white dark:bg-gray-900 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-gray-800 p-2 lg:p-6">
             <div id="calendar-container">
@@ -71,8 +71,8 @@
                 <!-- LISTA CON LÍMITE Y SCROLL (Cambios aquí) -->
                 <!-- Busca este bloque y asegúrate de que solo exista UNA VEZ -->
                 <div class="relative flex-1"> <!-- Añadimos flex-1 para que ocupe el espacio -->
-                    <div id="upcoming-events-list" 
-                        class="space-y-5 overflow-y-auto pr-2 custom-scrollbar" 
+                    <div id="upcoming-events-list"
+                        class="space-y-5 overflow-y-auto pr-2 custom-scrollbar"
                         style="max-height: 650px;"> <!-- Aumentamos un poco el alto para que quepan los 6 -->
                         <!-- Se rellena con JS -->
                     </div>
@@ -84,14 +84,14 @@
     </div>
 
     <!-- MODAL DETALLE (OVERLAY) -->
-    <div x-show="openDetail" 
+    <div x-show="openDetail"
          x-cloak
          class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md"
          x-transition:opacity>
-        
-        <div @click.away="openDetail = false" 
+
+        <div @click.away="openDetail = false"
              class="bg-white dark:bg-gray-800 rounded-[2rem] shadow-2xl max-w-sm w-full overflow-hidden border dark:border-gray-700 transform transition-all">
-            
+
             <div class="p-6 border-b dark:border-gray-700 flex justify-between items-center bg-slate-50/50 dark:bg-gray-900/50">
                 <h3 class="font-black text-slate-800 dark:text-white uppercase tracking-tighter" x-text="info.titulo"></h3>
                 <button @click="openDetail = false" class="text-slate-400 hover:text-slate-600 transition-colors">
