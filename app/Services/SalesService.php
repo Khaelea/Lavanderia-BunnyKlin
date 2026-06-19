@@ -11,9 +11,11 @@ class SalesService
     {
         return DB::transaction(function () use ($datos) {
 
+            // AQUÍ ESTABA EL PROBLEMA: No se estaba guardando el user_id
             $sale = Sale::query()->create([
                 'total'          => $datos['total'],
                 'payment_method' => $datos['metodo_pago'],
+                'user_id'        => $datos['user_id'] ?? null, // <-- ESTA LÍNEA ES LA MAGIA
                 // 'client_id'   => null // (Asegúrate de mapearlo si lo recibes en $datos)
             ]);
 

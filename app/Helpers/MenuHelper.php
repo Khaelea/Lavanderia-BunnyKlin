@@ -6,14 +6,9 @@ class MenuHelper
 {
     public static function getMenuGroups()
     {
-        // 1. Verificamos si hay un usuario logueado y si tiene rol de Administrador
-        // (Usamos la función isAdmin() que creamos en el Modelo User)
         $isAdmin = auth()->check() && auth()->user()->isAdmin();
 
-        // 2. Definimos todo el menú. 
-        // Nota: Agregamos 'admin_only' => true a los apartados que queremos ocultar al cajero.
         $menuGroups = [
-            // 1. SECCIÓN PRINCIPAL: Lo que el cajero usa todo el tiempo
             [
                 'title' => 'PRINCIPAL',
                 'items' => [
@@ -34,7 +29,6 @@ class MenuHelper
                     ],
                 ],
             ],
-            // 2. SECCIÓN CATÁLOGOS: Configuración de lo que se vende
             [
                 'title' => 'CATÁLOGOS',
                 'items' => [
@@ -42,13 +36,13 @@ class MenuHelper
                         'name' => 'Servicios',
                         'icon' => 'ui-elements',
                         'path' => '/servicios',
-                        'admin_only' => true, // <-- EJEMPLO: Oculto para cajeros
+                        'admin_only' => true, 
                     ],
                     [
                         'name' => 'Insumos',
                         'icon' => 'task',
                         'path' => '/insumos',
-                        'admin_only' => true, // <-- EJEMPLO: Oculto para cajeros
+                        'admin_only' => true, 
                     ],
                     [
                         'name' => 'Suscripciones',
@@ -57,7 +51,6 @@ class MenuHelper
                     ],
                 ],
             ],
-            // 3. SECCIÓN OPERACIÓN: Control interno del negocio
             [
                 'title' => 'OPERACIÓN',
                 'items' => [
@@ -71,14 +64,12 @@ class MenuHelper
                         'icon' => 'user-profile',
                         'path' => '/clientes',
                     ],
-                    // --- GESTIÓN DE PERSONAL ---
                     [
                         'name' => 'Gestión de Personal',
                         'icon' => 'user-profile', 
                         'path' => '/personal',
-                        'admin_only' => true, // <--- RESTRICCIÓN ACTIVADA
+                        'admin_only' => true, 
                     ],
-                    // ----------------------------------
                     [
                         'name' => 'Corte de Caja',
                         'icon' => 'charts',
@@ -98,22 +89,18 @@ class MenuHelper
             ],
         ];
 
-        // 3. FILTRADO AUTOMÁTICO:
-        // Si el usuario no es admin, quitamos las opciones bloqueadas antes de enviarlas al Sidebar
         $filteredMenu = [];
 
         foreach ($menuGroups as $group) {
             $filteredItems = array_filter($group['items'], function ($item) use ($isAdmin) {
-                // Si el item tiene la restricción 'admin_only' y el usuario NO es admin, lo eliminamos (return false)
                 if (isset($item['admin_only']) && $item['admin_only'] === true && !$isAdmin) {
                     return false;
                 }
                 return true;
             });
 
-            // Si después de filtrar quedaron items en esta categoría, la agregamos al menú final
             if (!empty($filteredItems)) {
-                $group['items'] = array_values($filteredItems); // Re-indexamos el arreglo
+                $group['items'] = array_values($filteredItems);
                 $filteredMenu[] = $group;
             }
         }

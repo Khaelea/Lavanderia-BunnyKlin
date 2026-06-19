@@ -12,10 +12,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         
-        // 1. Redirigir a los usuarios no autenticados a tu vista de signin
+        // Redirige al login correcto si no hay sesión
         $middleware->redirectGuestsTo('/signin');
 
-        // 2. Alias del middleware para administradores
+        // Registramos el alias del Middleware
         $middleware->alias([
             'admin' => \App\Http\Middleware\AdminMiddleware::class,
         ]);

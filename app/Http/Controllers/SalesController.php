@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Services\SalesService;
+use Illuminate\Support\Facades\Auth;
 
 class SalesController extends Controller
 {
@@ -13,7 +14,6 @@ class SalesController extends Controller
 
     public function store(Request $request)
     {
-        // Validamos que venga el carrito y el total
         $request->validate([
             'total'       => 'required|numeric|min:0',
             'metodo_pago' => 'required|string',
@@ -21,11 +21,19 @@ class SalesController extends Controller
         ]);
 
         try {
-            $venta = $this->ventaService->procesarVenta($request->all());
+            $datosVenta = $request->all();
+            $datosVenta['user_id'] = Auth::id(); 
+
+            $venta = $this->ventaService->procesarVenta($datosVenta);
+            $venta->load('user');
+
+            // Convertimos la venta a un Arreglo Puro para inyectar el nombre sin que Laravel lo borre
+            $ventaArray = $venta->toArray();
+            $ventaArray['nombre_vendedor'] = $venta->user ? $venta->user->name : 'Desconocido';
 
             return response()->json([
                 'success' => true,
-                'venta'   => $venta
+                'venta'   => $ventaArray
             ]);
 
         } catch (\Exception $e) {
@@ -37,26 +45,33 @@ class SalesController extends Controller
     {
         $query = \App\Models\Sale::query();
 
-        // Filtrar por fecha si el usuario lo solicita desde Alpine
         if ($request->tipo === 'dia' && $request->fecha) {
             $query->whereDate('created_at', $request->fecha);
         } elseif ($request->tipo === 'mes' && $request->fecha) {
-            // El input type="month" de HTML manda el formato "YYYY-MM"
             [$anio, $mes] = explode('-', $request->fecha);
             $query->whereYear('created_at', $anio)->whereMonth('created_at', $mes);
         } elseif ($request->tipo === 'folio' && $request->fecha) {
             $query->where('reference', 'LIKE', '%' . $request->fecha . '%');
         }
 
-        // Calcular el total REAL de la consulta antes de paginar (de todos los registros)
         $totalFiltro = $query->sum('total');
 
-        // Paginar los resultados. ->withQueryString() recuerda los parámetros (?tipo=dia...) en los botones de "Siguiente"
-        $ventas = $query->with('items')->latest()->paginate(10)->withQueryString();
+        $ventas = $query->with(['items', 'user'])->latest()->paginate(10)->withQueryString();
 
-        // Devolvemos el paginador y la suma total estructurados
+        // Convertimos toda la paginación a Arreglo Puro
+        $paginacionArray = $ventas->toArray();
+
+        // Inyectamos el nombre en cada renglón de forma directa
+        foreach ($paginacionArray['data'] as &$venta) {
+            if (isset($venta['user']) && $venta['user']) {
+                $venta['nombre_vendedor'] = $venta['user']['name'];
+            } else {
+                $venta['nombre_vendedor'] = 'Desconocido';
+            }
+        }
+
         return response()->json([
-            'paginacion'   => $ventas,
+            'paginacion'   => $paginacionArray,
             'total_filtro' => $totalFiltro
         ]);
     }
@@ -77,7 +92,6 @@ class SalesController extends Controller
 
     public function destroyBulk(Request $request)
     {
-        // Validamos que nos manden un arreglo de IDs y que existan en la tabla sales
         $request->validate([
             'ids'   => 'required|array',
             'ids.*' => 'integer|exists:sales,id'
