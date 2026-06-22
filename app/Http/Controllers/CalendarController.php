@@ -44,13 +44,13 @@ class CalendarController extends Controller
             ->whereNotNull('delivery_date')
             ->orderBy('delivery_date')
             ->get()
-            ->map(fn($o) => [
+            ->map(fn ($o) => [
                 'id'           => $o->id,
                 'reference'    => $o->reference,
                 'name'         => $o->client->name ?? 'Sin cliente',
                 'service'      => $o->details ?? 'Servicio',
                 'status'       => $o->status,
-                'arrival_date'  => $o->arrival_date  ? \Carbon\Carbon::parse($o->arrival_date)->toDateString()  : null,
+                'arrival_date'  => $o->arrival_date ? \Carbon\Carbon::parse($o->arrival_date)->toDateString() : null,
                 'delivery_date' => $o->delivery_date ? \Carbon\Carbon::parse($o->delivery_date)->toDateString() : null,
                 'total'        => $o->total_price,
             ]);
@@ -60,7 +60,7 @@ class CalendarController extends Controller
             ->where('status', 'active')
             ->orderBy('end_date')
             ->get()
-            ->map(fn($s) => [
+            ->map(fn ($s) => [
                 'id'                  => $s->id,
                 'name'                => $s->client->name ?? 'Sin cliente',
                 'subscription'        => $s->subscription->name ?? 'Plan',
