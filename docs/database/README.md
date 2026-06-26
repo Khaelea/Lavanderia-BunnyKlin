@@ -228,7 +228,7 @@ cortes_caja: Turnos de caja, registrando el dinero esperado vs. el contado.
 movimientos_caja: Entradas y salidas de efectivo independientes a las ventas (gastos, retiros).
 ```
 
-2. Catálogo de Inventario
+### 2. [Catálogo de Inventario](catalogo_inventario.md)
 
 Almacena los elementos comercializables del negocio.
 
@@ -236,9 +236,11 @@ Almacena los elementos comercializables del negocio.
 services: Servicios ofrecidos (ej. lavado por encargo, planchado).
 
 supplies: Insumos o productos físicos con control de stock (ej. detergentes, suavizantes).
+
+subscriptions: Planes base de la lavandería (precio, duración, kilos permitidos).
 ```
 
-3. Ventas y Pedidos (POS)
+### 3. [Ventas y Pedidos (POS)](/docs/database/ventas_pedidos.md)
 
 El núcleo transaccional del sistema.
 
