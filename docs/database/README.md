@@ -214,7 +214,7 @@ Módulos Principales
 El esquema se divide lógicamente en cinco grandes módulos operativos. Cada
 módulo tiene su propia documentación detallada (enlaces a continuación):
 
-1. Control de Caja y Usuarios
+### 1. [Control de Caja y Usuarios](caja_usuarios.md)
 
 Gestiona la operatividad de los cajeros y el flujo de efectivo.
 
