@@ -252,13 +252,13 @@ sale_items: Detalle de la venta. Utiliza instantáneas (name_snapshot, price_sna
 orders: Gestión de pedidos de servicios a futuro, controlando fechas de entrega y anticipos. Se relaciona uno a uno con una venta.
 ```
 
-4. Clientes y Facturación
+### 4. [Clientes y Facturación](/docs/database/clientes.md)
 
 ```
 clients: Directorio de clientes con soporte para direcciones de envío y datos fiscales completos (RFC, régimen fiscal, código postal) requeridos por el SAT.
 ```
 
-5. Suscripciones
+### 5. [Suscripciones](/docs/database/suscrpciones.md)
 
 ```
 Sistema automatizado para clientes recurrentes.
