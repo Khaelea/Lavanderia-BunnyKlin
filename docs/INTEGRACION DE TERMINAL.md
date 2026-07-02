@@ -1,24 +1,25 @@
 INTEGRACIÓN DE TERMINAL
 MERCADO PAGO
 
-Obtener credenciales<img width="903" height="208" alt="image" src="https://github.com/user-attachments/assets/3843562b-c714-4083-9a7e-48e6376f748c" />
+Obtener credenciales
 
 
 Las credenciales de Mercado Pago son creadas a partir de una aplicación de Mercado Pago. Es decir, están directamente vinculadas a la aplicación que se crea a través del apartado “Tus integraciones”.
 
 A continuación, se conocerá cómo obtener las credenciales.
+
 1.	En la esquina superior derecha de Mercado Pago Developers, haga clic en Ingresar y se tendrá que completar los datos requeridos con la información correspondiente a su cuenta de Mercado Pago. Luego, haga clic en el botón integraciones  ubicado en la esquina superior derecha.
 
 Link: https://www.mercadopago.com.mx/developers/es
 
-<img width="903" height="208" alt="image" src="https://github.com/user-attachments/assets/fb29b784-c4ff-4d25-9735-3e5669fc06b6" />
+<img width="921" height="96" alt="image" src="https://github.com/user-attachments/assets/30e6d650-d52a-4771-9aa0-1bd288f87188" />
 
 
  
 
 2.	Acceda a su aplicación o cree una si aún no lo ha hecho.
 
- <img width="804" height="438" alt="image" src="https://github.com/user-attachments/assets/138cafb0-f85b-4995-86cc-fcde3dbbbf8c" />
+<img width="896" height="201" alt="image" src="https://github.com/user-attachments/assets/a266389d-b9f9-47d0-8e06-08cd66b2bb6d" />
 
 
 
