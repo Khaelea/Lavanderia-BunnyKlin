@@ -26,28 +26,32 @@ Link: https://www.mercadopago.com.mx/developers/es
 2.1. Se coloca el titulo que desee que tenga la aplicación y después al botón de continuar.
 
  
-<img width="788" height="476" alt="image" src="https://github.com/user-attachments/assets/b1d57ea8-9796-4f5d-ac44-5fea41caaf7a" />
+<img width="804" height="438" alt="image" src="https://github.com/user-attachments/assets/6384ff7d-6426-44ab-ab2d-4e186c8cc76b" />
 
-<img width="921" height="384" alt="image" src="https://github.com/user-attachments/assets/754a87a0-b096-47bf-a486-2b6b793c2f96" />
 
 
 
 2.2.  En esta opción se deberá elegir las opciones de “Pagos presenciales”, y “Con un desarrollo propio”.
 
- 
-<img width="921" height="620" alt="image" src="https://github.com/user-attachments/assets/c9909d70-0b94-499b-b60d-5176ea2d423a" />
+<img width="788" height="476" alt="image" src="https://github.com/user-attachments/assets/868715f1-6f70-4206-8161-4d302ebe3ae0" />
+
+
+<img width="921" height="384" alt="image" src="https://github.com/user-attachments/assets/e61f6633-f8ec-4f75-9568-348226c1f5d1" />
 
  
 
 2.3. Una vez verificado que los datos estén en orden, se le da al botón de Confirmar.
 
- <img width="921" height="437" alt="image" src="https://github.com/user-attachments/assets/e096a32f-00ec-442e-8766-e83630c015ce" />
+<img width="921" height="620" alt="image" src="https://github.com/user-attachments/assets/9915d285-8b76-47ef-9e8c-870fcf926eae" />
 
- 
+
+
 
 3.	Una vez creada la aplicación, aparecerá esta pantalla:
 
-![Uploading image.png…]()
+<img width="735" height="376" alt="image" src="https://github.com/user-attachments/assets/22454184-1834-439a-83d5-ddfce89b1b41" />
+
+
 
 
  
