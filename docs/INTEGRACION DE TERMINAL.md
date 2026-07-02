@@ -2,6 +2,8 @@
 
 Este documento detalla el flujo de integración, configuración de credenciales y la arquitectura lógica implementada en el sistema para conectar los puntos de venta con las terminales físicas de Mercado Pago.
 
+<br>
+
 ## 1. Obtención de Credenciales
 
 Las credenciales de Mercado Pago están directamente vinculadas a la aplicación que se genera a través del apartado corporativo de integraciones.
@@ -60,6 +62,8 @@ Las credenciales de Mercado Pago están directamente vinculadas a la aplicación
   <img width="400" alt="image" src="https://github.com/user-attachments/assets/892c7d18-ae42-401f-a992-6d204f773b1e" />
 </p>
 
+<br>
+
 ## 2. Configuración del Entorno y Hardware
 
 Para entrelazar el software con el dispositivo Point físico, es necesario recuperar los identificadores de red y mapearlos en el backend.
@@ -75,6 +79,8 @@ Para entrelazar el software con el dispositivo Point físico, es necesario recup
 </p>
 
 4. Ubique la sección de configuración de pasarelas de pago e ingrese las credenciales productivas obtenidas anteriormente en sus respectivas variables globales.
+
+<br>
 
 ## 3. Arquitectura del Código y Reglas de Negocio
 
