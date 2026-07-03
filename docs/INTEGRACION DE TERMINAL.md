@@ -81,9 +81,8 @@ Para entrelazar el software con el dispositivo Point físico, es necesario recup
 4. **Declaración de Variables:** Ubique la sección de pasarelas de pago dentro de su archivo `.env` (aproximadamente en la línea 59) e ingrese las credenciales productivas obtenidas en sus respectivas llaves. La estructura de las variables globales debe definirse de la siguiente manera:
 
 ```env
-# ==========================================
-# CONFIGURACIÓN DE TERMINAL MERCADO PAGO
-# ==========================================
-MP_ACCESS_TOKEN="APP_USR-00000000000-000000-00000000000"
-MP_CLIENT_SECRET="XXXXXXXXXXXXXXXXXX"
-MP_DEVICE_ID="NEWLAND_N950__N9XXXXXXXXXXXXX"
+
+MERCADOPAGO_ACCESS_TOKEN=APP_USR-XXXXXXXXXXXXXXXXXXXXXX
+MERCADOPAGO_POINT_DEVICE_ID=NEWLAND_NXXXXXXXXXXXXXXXXXXXXXX
+MERCADOPAGO_PUBLIC_KEY=APP_USR-XXXXXXXXXXXXXXXXXXXXXXXXXXXX
+
