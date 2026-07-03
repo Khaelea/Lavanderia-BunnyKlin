@@ -74,7 +74,7 @@ Route::middleware(['auth'])->group(function () {
             ->get();
         $supplies = Supply::query()->where('is_active', true)->get();
         $subscriptions = Subscription::query()->where('is_active', true)->get();
-        $clients = Client::query()->latest()->get(); 
+        $clients = Client::query()->latest()->get();
 
         return view('pages.pos', [
             'title'         => 'Punto de Venta',
