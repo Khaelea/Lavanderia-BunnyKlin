@@ -1,0 +1,331 @@
+# Documentación Técnica del Sistema - CRM BunnyKlin
+
+Este repositorio contiene la arquitectura central y las guías de integración para los módulos de pasarela de pagos físicos y el sistema automatizado de notificaciones y control de accesos del personal.
+
+<br>
+
+---
+
+## Módulo 1: Integración de Terminal Física Mercado Pago
+
+Este documento detalla el flujo de integración, configuración de credenciales y la arquitectura lógica implementada en el sistema para conectar los puntos de venta con las terminales físicas de Mercado Pago.
+
+### 1. Obtención de Credenciales
+
+Las credenciales de Mercado Pago están directamente vinculadas a la aplicación que se genera a través del apartado corporativo de integraciones.
+
+#### Pasos para obtener las credenciales:
+
+1. Ingrese a [Mercado Pago Developers](https://www.mercadopago.com.mx/developers/es). En la esquina superior derecha, haga clic en **Ingresar** e inicie sesión con su cuenta. Posteriormente, acceda al apartado de **Tus integraciones**.
+
+<p align="center">
+  <img width="500" alt="image" src="https://github.com/user-attachments/assets/30e6d650-d52a-4771-9aa0-1bd288f87188" />
+</p>
+
+2. Seleccione una aplicación existente o cree una nueva interfaz si aún no lo ha hecho.
+
+<p align="center">
+  <img width="500" alt="image" src="https://github.com/user-attachments/assets/a266389d-b9f9-47d0-8e06-08cd66b2bb6d" />
+</p>
+
+3. Asigne el título correspondiente a la aplicación y haga clic en el botón de **Continuar**.
+
+<p align="center">
+  <img width="450" alt="image" src="https://github.com/user-attachments/assets/6384ff7d-6426-44ab-ab2d-4e186c8cc76b" />
+</p>
+
+4. En el tipo de solución, elija estrictamente las opciones de **"Pagos presenciales"** y **"Con un desarrollo propio"**.
+
+<p align="center">
+  <img width="450" alt="image" src="https://github.com/user-attachments/assets/868715f1-6f70-4206-8161-4d302ebe3ae0" />
+</p>
+
+<p align="center">
+  <img width="500" alt="image" src="https://github.com/user-attachments/assets/e61f6633-f8ec-4f75-9568-348226c1f5d1" />
+</p>
+
+5. Verifique la declaración de términos de uso y haga clic en el botón de **Confirmar**.
+
+<p align="center">
+  <img width="500" alt="image" src="https://github.com/user-attachments/assets/9915d285-8b76-47ef-9e8c-870fcf926eae" />
+</p>
+
+6. Una vez creada la aplicación de forma exitosa, el sistema desplegará el panel principal de control. Para obtener los tokens de producción, haga clic en el apartado de **Credenciales productivas**.
+
+<p align="center">
+  <img width="400" alt="image" src="https://github.com/user-attachments/assets/22454184-1834-439a-83d5-ddfce89b1b41" />
+</p>
+
+7. Haga clic en **Activar credenciales**. Complete el formulario de datos comerciales e información requerida por la plataforma. Al finalizar, confirme mediante el botón **Activar credenciales de producción**.
+
+<p align="center">
+  <img width="500" alt="image" src="https://github.com/user-attachments/assets/b6d110a4-dbf1-4db5-b705-1fc47fc4803e" />
+</p>
+
+8. Copie y resguarde los valores generados bajo los campos **Access Token** y **Client Secret**. Serán indispensables en los archivos de configuración del entorno del servidor.
+
+<p align="center">
+  <img width="400" alt="image" src="https://github.com/user-attachments/assets/892c7d18-ae42-401f-a992-6d204f773b1e" />
+</p>
+
+### 2. Configuración del Entorno y Hardware
+
+Para entrelazar el software con el dispositivo Point físico, es necesario recuperar los identificadores de red y mapearlos en el backend.
+
+1. **Obtención del Device ID:** Utilice un cliente HTTP como Postman para consultar los dispositivos vinculados y recuperar el identificador único del hardware. El identificador de terminal activo para este entorno es `NEWLAND_N950__N950NCCB05478475`.
+
+2. **Estado del Hardware:** Asegúrese de que la terminal física permanezca encendida, con conexión estable a internet (Wi-Fi/4G) y correctamente emparejada a la cuenta comercial mediante la aplicación móvil de Mercado Pago.
+
+3. **Variables de Entorno:** Diríjase al archivo `.env` ubicado en la raíz del proyecto web.
+
+<p align="center">
+  <img width="200" alt="image" src="https://github.com/user-attachments/assets/cd16d27a-1ef4-458b-b28a-1467bf9e0b25" />
+</p>
+
+4. **Declaración de Variables:** Ubique la sección de pasarelas de pago dentro de su archivo `.env` (aproximadamente en la línea 59) e ingrese las credenciales productivas obtenidas en sus respectivas llaves. La estructura de las variables globales debe definirse de la siguiente manera:
+
+```env
+MERCADOPAGO_ACCESS_TOKEN="APP_USR-XXXXXXXXXXXXXXXXXXXXXX"
+MERCADOPAGO_POINT_DEVICE_ID="NEWLAND_NXXXXXXXXXXXXXXXXXXXXXX"
+MERCADOPAGO_PUBLIC_KEY="APP_USR-XXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+```
+
+### 3. Arquitectura del Código y Reglas de Negocio
+
+A continuación se detalla la lógica técnica distribuida entre el Frontend (JavaScript) y el Backend (PHP/Laravel) que gobierna el comportamiento del punto de venta.
+
+#### Interfaz de Usuario y Control de Interrupciones
+* **Archivo origen:** `\public\js\pos.js`
+
+El sistema centraliza el manejo de excepciones visuales. La función `mostrarError` integra un mecanismo de limpieza (`startsWith("<")`) que intercepta fallas críticas del servidor (como errores HTTP 500) y los procesa en mensajes legibles, impidiendo que código HTML crudo afecte la pantalla del cajero.
+
+Para la cancelación manual, la función `cancelarTerminal` interrumpe de forma controlada la ejecución del proceso. Al cambiar el estado de `this.pollingActive` a `false`, se rompe el ciclo de escucha hacia la terminal, liberando el punto de venta si la operación es cancelada por el operador.
+
+#### Inicio de Transacción y Petición de Cobro
+* **Archivo origen:** `\public\js\pos.js`
+
+Antes de consumir recursos de red, el script frontend valida localmente que el importe total cumpla las políticas comerciales de la pasarela (monto mínimo de $5.00 MXN), optimizando el rendimiento.
+
+Al iniciar la transacción, se activan los indicadores `esperandoTerminal` para bloquear el panel del cajero y `pollingActive` para autorizar la lectura continua. El proceso extrae el token CSRF para firmar la petición enviada a `/terminal/cobrar`, asegurando la integridad de la solicitud ante ataques web.
+
+#### Ciclo de Escucha ("Polling")
+* **Archivo origen:** `\public\js\pos.js`
+
+El sistema captura y almacena de forma persistente el ticket único (`intentId`) devuelto por la API para rastrear la operación en curso.
+
+Se despliega un ciclo `while` limitado a un máximo de 60 intentos (equivalente a un minuto de tolerancia). Mediante una promesa con `setTimeout`, se fuerza un retraso de 1000ms entre peticiones, regulando la carga del servidor. Si la consulta al endpoint falla debido a caídas temporales de la red, el bloque `catch` absorbe el error e instruye al ciclo a continuar en el siguiente segundo, garantizando que el cobro no se cierre por error.
+
+#### Árbol de Decisión y Resolución de Estados
+* **Archivo origen:** `\public\js\pos.js`
+
+El sistema transforma los estados financieros recibidos a letras mayúsculas para evitar fallos del código por sensibilidad a mayúsculas y minúsculas (*Case Sensitivity*).
+
+Ante respuestas como `OPEN` o `PROCESSING`, la rutina mantiene la pantalla bloqueada y sigue consultando. El sistema procesa el guardado en base de datos (`finalizarVentaLocal`) únicamente al confirmar la doble validación positiva: estado del dispositivo en `FINISHED` y estado del pago bancario en `APPROVED`. Cualquier código de error (`CANCELED`, `REJECTED`, `ERROR`) detiene el flujo, lanza una excepción controlada y muestra la alerta en la caja.
+
+#### Enrutamiento Protegido
+* **Archivo origen:** `routes/web.php`
+
+Las rutas encargadas de interactuar de forma directa con el hardware de pago se declaran dentro de un grupo restringido por el filtro `auth`. Esto garantiza que únicamente el personal con una sesión activa en el sistema pueda inicializar cobros o consultar estados del hardware, bloqueando accesos no autorizados mediante URLs directas.
+
+#### Autenticación de Hardware y Creación de Intención
+* **Archivo origen:** `TerminalController.php`
+
+El código recupera las credenciales criptográficas y el identificador de la máquina directamente de las variables de entorno (`.env`), eliminando el riesgo de dejar llaves maestras escritas dentro del código.
+
+La API de Point exige procesar el dinero fraccionado. El método toma el monto total, lo multiplica por 100 y lo convierte a número entero (`$request->total * 100`) para asegurar la equivalencia correcta en centavos. Para poder rastrear las ventas, se genera un código de referencia concatenando las siglas `BK-` con la fecha y hora (Timestamp Unix), permitiendo buscar la transacción exacta en el panel de Mercado Pago.
+
+#### Regla de Reconciliación de Estados
+* **Archivo origen:** `TerminalController.php`
+
+Es un mecanismo de seguridad ante fallos del equipo físico. Si la consulta confirma que el dinero ingresó correctamente al banco (`$estadoPago === 'approved'`), pero la terminal no emite el estado de finalización por un error mecánico (como atasco o falta de papel), el sistema fuerza el estado a `FINISHED`. Esto hace que el Punto de Venta liquide la compra tomando como prioridad la transacción financiera exitosa y no la falla de la máquina impresora.
+
+#### Persistencia y Trazabilidad de Venta
+* **Archivo origen:** `SalesController.php`
+
+Tras la aprobación mutua del cobro, se ejecuta el método `store` para guardar los datos. El registro de la venta asocia automáticamente el ID del cajero logueado (`Auth::id()`), manteniendo un historial estricto de quién ejecutó la transacción.
+
+Al devolver la respuesta de éxito hacia la pantalla, el sistema adjunta de manera explícita el nombre del cajero. Esto provee de manera inmediata los datos exactos requeridos para imprimir el ticket físico de compra sin necesidad de generar consultas adicionales al servidor.
+
+<br>
+
+---
+
+## Módulo 2: Configuración de Correos y Flujo de Aprobación de Usuarios
+
+Este documento detalla la configuración del servidor de correos, la estructura de las plantillas de notificación y la arquitectura lógica implementada en el Punto de Venta para el registro, control de acceso y validación de nuevas cuentas de personal.
+
+### 1. Configuración de Servidor de Correo (SMTP)
+
+El sistema utiliza la infraestructura de **Titan Email** para procesar y enviar de forma segura las alertas de seguridad y moderación al administrador.
+
+#### Variables de Entorno:
+
+1. Diríjase al archivo `.env` ubicado en la raíz del proyecto web.
+2. Ingrese las credenciales del servidor SMTP institucional. La estructura de las variables globales de correo debe definirse de la siguiente manera:
+
+```env
+# ==========================================
+# CONFIGURACIÓN DE NOTIFICACIONES MAIL (SMTP)
+# ==========================================
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.titan.email
+MAIL_PORT=587
+MAIL_USERNAME="tu-correo@tu-dominio.com.mx"
+MAIL_PASSWORD="contraseña_segura_de_aplicacion"
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS="notificaciones@tu-dominio.com.mx"
+MAIL_FROM_NAME="BunnyKlin"
+```
+
+> **Nota de seguridad:** Por protección de las credenciales de acceso, este archivo está estrictamente excluido del código fuente mediante el archivo `.gitignore` para prevenir que sea subido al repositorio público de GitHub.
+
+### 2. Estructura de las Plantillas de Vista (Blade)
+
+La capa visual de las notificaciones utiliza el motor de plantillas Blade de Laravel para estructurar y presentar la información de los usuarios antes de mandarla por correo.
+
+#### Diseño de Correo de Notificación (`aprobacion-cuenta.blade.php`)
+
+* **Ubicación del archivo:** `resources/views/emails/aprobacion-cuenta.blade.php`
+* **Contenido:** Despliega una tarjeta HTML limpia y profesional que muestra de forma ordenada los datos que el usuario ingresó en el formulario de registro:
+  * **Nombre:** `{{ $user->name }}`
+  * **Email:** `{{ $user->email }}`
+  * **Rol asignado:** `{{ $user->role }}`
+* **Botones de acción:** El diseño incluye dos botones de acción directa incrustados en el cuerpo del mensaje. Estos botones adjuntan el valor del `$token` único de control y apuntan a sus respectivas URLs de validación en el servidor:
+  * **Permitir (Activar):** Enlace en color verde hacia la ruta `cuenta.aprobar` para dar de alta al empleado.
+  * **Cancelar (Eliminar):** Enlace en color rojo hacia la ruta `cuenta.rechazar` para descartar el registro.
+
+### 3. Seguridad en Rutas y Middleware de Acceso
+
+Las URLs encargadas de alterar los estados de los usuarios en el backend están protegidas mediante dos filtros de seguridad en el archivo `routes/web.php` para impedir inyecciones o accesos no autorizados.
+
+#### 3.1. Protección de Sesión Activa (`auth`)
+Todas las rutas de administración están encapsuladas dentro del grupo afectado por el middleware `auth`. Si quien invoca la URL no posee una sesión válida e iniciada en el Punto de Venta, la petición es rechazada de inmediato.
+
+#### 3.2. Filtro de Rol Operativo (`AdminMiddleware`)
+* **Ubicación del archivo:** `app/Http/Middleware/AdminMiddleware.php`
+* **Lógica del Filtro:** Antes de ceder el control, el código evalúa si el usuario en sesión cuenta con el rol de administración:
+
+```php
+if (!auth()->check() || !auth()->user()->isAdmin()) {
+    abort(403, 'Acceso denegado. Solo los administradores pueden realizar esta acción.');
+}
+```
+
+Si la condición falla, el sistema interrumpe la petición web y retorna un error `403 Forbidden` (Acceso denegado).
+
+#### 3.3. Declaración de Endpoints del Módulo de Personal
+Estas son las rutas declaradas en `web.php` para el control de los operadores y la respuesta de los botones de los correos electrónicos:
+
+```php
+Route::get('/personal', function () {
+    $empleados = User::query()->latest()->get();
+    return view('pages.personal', ['title' => 'Gestión de Personal', 'empleados' => $empleados]);
+})->name('personal');
+
+Route::post('/personal/guardar', [EmpleadoController::class, 'store'])->name('personal.store');
+Route::delete('/personal/eliminar/{id}', [EmpleadoController::class, 'eliminarPorId'])->name('personal.eliminar_id');
+Route::get('/aprobar-cuenta/{token}', [EmpleadoController::class, 'aprobar'])->name('cuenta.aprobar');
+Route::get('/rechazar-cuenta/{token}', [EmpleadoController::class, 'rechazar'])->name('cuenta.rechazar');
+```
+
+### 4. Arquitectura de Código y Reglas de Negocio (`EmpleadoController`)
+
+La lógica y el control de los accesos están gobernados por la clase `EmpleadoController.php`.
+
+#### 4.1. Registro y Envío de Solicitud (`store`)
+Para evitar que queden cuentas rotas si ocurre un fallo de red durante el envío del correo, el registro se ejecuta dentro de una transacción de base de datos (`DB::beginTransaction()`).
+
+```php
+public function store(Request $request){
+    $request->validate([
+        'nombre' => 'required|min:3',
+        'email' => 'required|email|unique:users,email',
+        'rol' => 'required',
+        'password' => 'required|min:6'
+    ]);
+
+    try {
+        DB::beginTransaction();
+
+        $token = Str::random(60);
+
+        $empleado = User::create([
+            'name' => $request->nombre,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->rol,
+            'status' => 'pendiente', 
+            'confirmation_token' => $token
+        ]);
+
+        Mail::to('[CORREO_ADMINISTRADOR]')->send(new AprobacionCuentaMailable($empleado, $token));
+
+        DB::commit();
+
+        return redirect()->back()->with('success', '¡Solicitud enviada! La cuenta está pendiente de aprobación.');
+
+    } catch (\Exception $e) {
+        DB::rollBack();
+        return redirect()->back()->with('error', 'No se pudo procesar la solicitud. Revisa la conexión al correo.')->withInput();
+    }
+}
+```
+* **Funcionamiento:** Se validan los datos mínimos del formulario. El sistema genera una cadena aleatoria de 60 caracteres mediante `Str::random(60)` para usarla como token de verificación. El registro se guarda con el campo `status` en `'pendiente'` de forma predeterminada y se intenta enviar el correo. Si el correo se envía correctamente, se confirman los cambios con `DB::commit()`. De lo contrario, se dispara un `DB::rollBack()` para limpiar el registro fallido de la base de datos de inmediato.
+
+#### 4.2. Eliminación de Cuentas por ID (`eliminarPorId`)
+Permite remover la fila de un usuario activo de manera directa utilizando su número identificador.
+
+```php
+public function eliminarPorId($id){
+    $usuario = User::findOrFail($id);
+    $nombre = $usuario->name;
+    $usuario->delete();
+    
+    return redirect()->back()->with('success', 'Has eliminado la cuenta de '.$nombre.' exitosamente.');
+}
+```
+* **Funcionamiento:** El método busca al usuario mediante `User::findOrFail($id)`. Si el identificador no existe en la base de datos, Laravel detiene el proceso mostrando una pantalla de error 404. Si existe, extrae el nombre del registro para el mensaje de confirmación y lo purga de la tabla usando el comando `delete()`.
+
+#### 4.3. Validación y Activación de Accesos (`aprobar`)
+Este método se ejecuta al presionar el botón de activación en el correo del administrador. Quita las restricciones del usuario para permitirle iniciar sesión.
+
+```php
+public function aprobar($token){
+    $tokenLimpio = trim($token);
+    
+    $usuario = User::where('confirmation_token', $tokenLimpio)->first();
+
+    if (!$usuario) {
+        return redirect('/personal')->with('error', 'El enlace no es válido o esta solicitud ya fue procesada.');
+    }
+
+    $usuario->update([
+        'status' => 'activo',
+        'confirmation_token' => null, 
+        'email_verified_at' => now()
+    ]);
+
+    return redirect('/personal')->with('success', '¡Has aprobado la cuenta de '.$usuario->name.' con éxito!');
+}
+```
+* **Funcionamiento:** Limpia los espacios vacíos del token con `trim()` y busca la coincidencia en la tabla de usuarios. Si el token no existe (porque está mal o ya se usó antes), redirige al administrador mostrando un error. Si lo encuentra, actualiza el estado del cajero a `'activo'`, borra la llave de `confirmation_token` escribiéndole `null` para invalidar el link, y registra la fecha de validación en `email_verified_at`.
+
+#### 4.4. Rechazo y Purga de Solicitudes (`rechazar`)
+Se dispara al presionar el botón rojo de cancelación desde el cuerpo del correo.
+
+```php
+public function rechazar($token){
+    $tokenLimpio = trim($token);
+    
+    $usuario = User::where('confirmation_token', $tokenLimpio)->first();
+
+    if (!$usuario) {
+        return redirect('/personal')->with('error', 'El enlace no es válido o esta solicitud ya fue procesada.');
+    }
+
+    $usuario->delete();
+    
+    return redirect('/personal')->with('success', 'Has rechazado la solicitud.');
+}
+```
+* **Funcionamiento:** Filtra el token recibido y busca la solicitud pendiente. Si el registro no se encuentra, aborta y regresa a la pantalla de gestión. Si localiza la petición, ejecuta un comando `$usuario->delete()`, eliminando físicamente la fila para no acumular registros no autorizados en la base de datos.
