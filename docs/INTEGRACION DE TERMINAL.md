@@ -78,98 +78,12 @@ Para entrelazar el software con el dispositivo Point físico, es necesario recup
   <img width="200" alt="image" src="https://github.com/user-attachments/assets/cd16d27a-1ef4-458b-b28a-1467bf9e0b25" />
 </p>
 
-4. Ubique la sección de configuración de pasarelas de pago e ingrese las credenciales productivas obtenidas anteriormente en sus respectivas variables globales.
+4. **Declaración de Variables:** Ubique la sección de pasarelas de pago dentro de su archivo `.env` (aproximadamente en la línea 59) e ingrese las credenciales productivas obtenidas en sus respectivas llaves. La estructura de las variables globales debe definirse de la siguiente manera:
 
-<br>
-
-## 3. Arquitectura del Código y Reglas de Negocio
-
-A continuación se detalla la lógica técnica distribuida entre el Frontend (JavaScript) y el Backend (PHP/Laravel) que gobierna el comportamiento del punto de venta.
-
-### Interfaz de Usuario y Control de Interrupciones
-Archivo origen: `\public\js\pos.js`
-
-El sistema centraliza el manejo de excepciones visuales. La función `mostrarError` integra un mecanismo de sanitización (`startsWith("<")`) que intercepta fallas críticas del servidor (como errores HTTP 500) y los procesa en mensajes legibles, impidiendo que código HTML crudo afecte el renderizado del DOM o colapse la interfaz.
-
-Para la cancelación manual, la función `cancelarTerminal` interrumpe de forma controlada la ejecución asíncrona. Al mutar el estado de `this.pollingActive` a `false`, se rompe el bucle de escucha hacia la terminal, liberando el hilo principal del punto de venta si la operación es cancelada por el operador.
-
-<p align="center">
-  <img width="350" alt="image" src="https://github.com/user-attachments/assets/b0b53ae1-1b62-4df4-a302-2bbae75a7f77" />
-</p>
-
-### Inicio de Transacción y Petición de Cobro
-Archivo origen: `\public\js\pos.js`
-
-Antes de consumir recursos de red, el script frontend valida localmente que el importe total cumpla las políticas comerciales de la pasarela (monto mínimo de $5.00 MXN), optimizando el rendimiento de la API.
-
-Al inicializar la transacción, se activan de manera síncrona los indicadores booleanos `esperandoTerminal` para bloquear el panel del cajero y `pollingActive` para autorizar la escucha activa. El proceso extrae dinámicamente el token CSRF del DOM para firmar la petición asíncrona (`fetch`) enviada al endpoint `/terminal/cobrar`, asegurando la integridad de la solicitud ante vulnerabilidades cruzadas.
-
-<p align="center">
-  <img width="450" alt="image" src="https://github.com/user-attachments/assets/e3ab3275-f24f-410f-abfe-6ad4ab268992" />
-</p>
-
-### Ciclo de Escucha Activa ("Polling")
-Archivo origen: `\public\js\pos.js`
-
-El sistema captura y almacena de forma persistente el ticket único (`intentId`) devuelto por la API para mantener la trazabilidad de la operación actual en segundo plano.
-
-Se despliega un ciclo `while` limitado a un máximo de 60 iteraciones (equivalente a un minuto de tolerancia). Mediante una promesa combinada con `setTimeout`, se fuerza un retraso síncrono de 1000ms entre peticiones, regulando la carga sobre el servidor. Si la consulta al endpoint falla debido a inestabilidad temporal de la red, el bloque `catch` absorbe el error e instruye al ciclo a continuar (`continue`) en la siguiente iteración, garantizando la resiliencia del proceso de cobro.
-
-<p align="center">
-  <img width="400" alt="image" src="https://github.com/user-attachments/assets/878adde5-ce18-4619-a25d-7c541eb2f5fe" />
-</p>
-
-### Árbol de Decisión y Resolución de Estados
-Archivo origen: `\public\js\pos.js`
-
-El sistema transforma los estados financieros recibidos a letras mayúsculas estrictas para mitigar errores de ejecución causados por la sensibilidad a mayúsculas y minúsculas (*Case Sensitivity*).
-
-Ante estados transitorios como `OPEN` o `PROCESSING`, la rutina mantiene el bloqueo visual y avanza a la siguiente consulta. El sistema procesa el guardado en base de datos (`finalizarVentaLocal`) únicamente al confirmar la doble validación positiva: estado del dispositivo en `FINISHED` y estado transaccional bancario en `APPROVED`. Cualquier código de terminación anómala (`CANCELED`, `REJECTED`, `ERROR`) detiene el flujo, lanza una excepción controlada y despliega la alerta correspondiente en la caja.
-
-<p align="center">
-  <img width="350" alt="image" src="https://github.com/user-attachments/assets/14234229-b32d-479a-a776-2d5ed2a94c53" />
-</p>
-
-### Enrutamiento Protegido
-Archivo origen: `routes/web.php`
-
-Las rutas encargadas de interactuar de forma directa con el hardware se declaran dentro de un grupo restringido por el middleware `auth`. Esto garantiza que únicamente el personal con una sesión activa y válida en el sistema pueda inicializar cobros o consultar estados del hardware, previniendo accesos no autorizados mediante inyección externa a las URLs.
-
-<p align="center">
-  <img width="350" alt="image" src="https://github.com/user-attachments/assets/e6d4cb6c-191c-4c34-a695-62a23bb85c4e" />
-</p>
-
-<p align="center">
-  <img width="450" alt="image" src="https://github.com/user-attachments/assets/2d39fa0b-7fbc-4784-81c0-061e5720ca35" />
-</p>
-
-### Autenticación de Hardware y Creación de Intención
-Archivo origen: `TerminalController.php`
-
-El constructor de la clase recupera las credenciales criptográficas y el identificador de la máquina directamente de las variables de entorno del servidor (`.env`), eliminando malas prácticas de exposición de llaves maestras dentro del código fuente.
-
-La API de Point procesa importes fraccionados, por lo que el método formatea el monto multiplicándolo por 100 y realizando un *cast* a entero (`$request->total * 100`) para asegurar la equivalencia en centavos. Para la conciliación, se genera una referencia externa única concatenando el prefijo institucional `BK-` con un *Timestamp Unix*, facilitando la auditoría financiera directa en el panel general de Mercado Pago.
-
-<p align="center">
-  <img width="450" alt="image" src="https://github.com/user-attachments/assets/fc7350df-1e7d-46ed-91e4-501dc0586870" />
-</p>
-
-### Regla de Reconciliación de Estados
-Archivo origen: `TerminalController.php`
-
-Mecanismo de mitigación ante fallos de hardware en producción. Si la consulta confirma el abono monetario exitoso (`$estadoPago === 'approved'`), pero la terminal no emite el estado de finalización debido a un error mecánico (como atasco o falta de papel), el backend fuerza la mutación del estado a `FINISHED`. Esto implementa una regla de negocio que prioriza la confirmación transaccional financiera sobre el estado periférico del dispositivo físico.
-
-<p align="center">
-  <img width="450" alt="image" src="https://github.com/user-attachments/assets/57dead9a-46b2-4233-af9c-9dccd9de26c8" />
-</p>
-
-### Persistencia y Trazabilidad de Venta
-Archivo origen: `SalesController.php`
-
-Tras la aprobación mutua del cobro entre la API y el dispositivo, se ejecuta el método `store` para la persistencia de datos en el sistema. El registro de la venta vincula el `Auth::id()` del operador en sesión activa, manteniendo la trazabilidad estricta del usuario que ejecutó la transacción para auditorías internas.
-
-Al retornar la respuesta JSON hacia el frontend, se realiza una mutación que anexa la propiedad `nombre_vendedor`. Esto provee de manera inmediata a la vista los datos exactos requeridos para la impresión del ticket físico de compra sin necesidad de generar llamadas asíncronas secundarias a las tablas de usuarios.
-
-<p align="center">
-  <img width="450" alt="image" src="https://github.com/user-attachments/assets/dbad32c8-9825-485d-b646-514cf9025e21" />
-</p>
+```env
+# ==========================================
+# CONFIGURACIÓN DE TERMINAL MERCADO PAGO
+# ==========================================
+MP_ACCESS_TOKEN="APP_USR-00000000000-000000-00000000000"
+MP_CLIENT_SECRET="XXXXXXXXXXXXXXXXXX"
+MP_DEVICE_ID="NEWLAND_N950__N9XXXXXXXXXXXXX"
