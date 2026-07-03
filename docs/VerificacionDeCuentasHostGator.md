@@ -2,16 +2,15 @@
 
 Este documento detalla la configuración del servidor de correos, la estructura de las plantillas de notificación y la arquitectura lógica implementada en el Punto de Venta para el registro, control de acceso y validación de nuevas cuentas de personal.
 
-<br>
+---
 
 ## 1. Configuración de Servidor de Correo (SMTP)
 
 El sistema utiliza la infraestructura de **Titan Email** para procesar y enviar de forma segura las alertas de seguridad y moderación al administrador.
 
-### Variables de Entorno:
+### Variables de Entorno
 
-1. Diríjase al archivo `.env` ubicado en la raíz del proyecto web.
-2. Ingrese las credenciales del servidor SMTP institucional. La estructura de las variables globales de correo debe definirse de la siguiente manera:
+Diríjase al archivo `.env` ubicado en la raíz del proyecto web e ingrese las credenciales del servidor SMTP institucional. La estructura de las variables globales de correo debe definirse de la siguiente manera:
 
 ```env
 # ==========================================
@@ -27,52 +26,50 @@ MAIL_FROM_ADDRESS="xxxxxxxxxxxxs@tu-xxxxx.com.mx"
 MAIL_FROM_NAME="xxxxx"
 ```
 
+> **Nota:** Este archivo por razones de seguridad no está al descargar el proyecto.
 
-<br>
+---
 
 ## 2. Estructura de las Plantillas de Vista (Blade)
 
-La capa visual de las notificaciones utiliza el motor de plantillas Blade de Laravel para estructurar y presentar la información de los usuarios antes de mandarla por correo.
+La capa visual de las notificaciones utiliza el motor de plantillas Blade de Laravel para estructurar y presentar la información de los usuarios antes del envío.
 
 ### Diseño de Correo de Notificación (`aprobacion-cuenta.blade.php`)
 
-**Ubicación del archivo:** `resources/views/emails/aprobacion-cuenta.blade.php`
+* **Ubicación:** `resources/views/emails/aprobacion-cuenta.blade.php`
+* **Estructura de Datos:** Despliega una tarjeta HTML estructurada que muestra los datos capturados en el formulario de registro:
+  * **Nombre:** `{{ $user->name }}`
+  * **Email:** `{{ $user->email }}`
+  * **Rol asignado:** `{{ $user->role }}`
 
-**Contenido:** 
-Despliega una tarjeta HTML limpia y profesional que muestra de forma ordenada los datos que el usuario ingresó en el formulario de registro:
-* **Nombre:** `{{ $user->name }}`
-* **Email:** `{{ $user->email }}`
-* **Rol asignado:** `{{ $user->role }}`
+**Manejo de Acciones (CTA):**
+El diseño integra dos botones de acción directa en el cuerpo del mensaje. Ambos adjuntan el valor del `$token` único de control y apuntan a sus respectivas URLs de resolución:
+* **Permitir (Activar):** Enlace hacia la ruta `cuenta.aprobar` para dar de alta al empleado.
+* **Cancelar (Eliminar):** Enlace hacia la ruta `cuenta.rechazar` para descartar el registro.
 
-**Botones de acción:** 
-El diseño incluye dos botones de acción directa incrustados en el cuerpo del mensaje. Estos botones adjuntan el valor del `$token` único de control y apuntan a sus respectivas URLs de validación en el servidor:
-* **Permitir (Activar):** Enlace en color verde hacia la ruta `cuenta.aprobar` para dar de alta al empleado.
-* **Cancelar (Eliminar):** Enlace en color rojo hacia la ruta `cuenta.rechazar` para descartar el registro.
-
-<br>
+---
 
 ## 3. Seguridad en Rutas y Middleware de Acceso
 
-Las URLs encargadas de alterar los estados de los usuarios en el backend están protegidas mediante dos filtros de seguridad en el archivo `routes/web.php` para impedir inyecciones o accesos no autorizados.
+Las URLs encargadas de alterar los estados de los usuarios en el backend están protegidas mediante dos filtros de seguridad en el archivo `routes/web.php` para mitigar accesos no autorizados.
 
 ### 3.1. Protección de Sesión Activa (`auth`)
-Todas las rutas de administración están encapsuladas dentro del grupo afectado por el middleware `auth`. Si quien invoca la URL no posee una sesión válida e iniciada en el Punto de Venta, la petición es rechazada de inmediato.
+Todas las rutas de administración están encapsuladas dentro del grupo afectado por el middleware `auth`. Si el cliente no posee una sesión válida e iniciada, la petición es rechazada en la capa de enrutamiento.
 
 ### 3.2. Filtro de Rol Operativo (`AdminMiddleware`)
-**Ubicación del archivo:** `app/Http/Middleware/AdminMiddleware.php`
+* **Ubicación:** `app/Http/Middleware/AdminMiddleware.php`
 
-**Lógica del Filtro:** Antes de ceder el control, el código evalúa si el usuario en sesión cuenta con el rol de administración:
+Antes de ceder el control al controlador, el código evalúa si el usuario en sesión cuenta con privilegios de administración:
 
 ```php
 if (!auth()->check() || !auth()->user()->isAdmin()) {
     abort(403, 'Acceso denegado. Solo los administradores pueden realizar esta acción.');
 }
 ```
+Si la aserción falla, el kernel interrumpe la petición web y retorna un código de estado HTTP `403 Forbidden`.
 
-Si la condición falla, el sistema interrumpe la petición web y retorna un error `403 Forbidden` (Acceso denegado).
-
-### 3.3. Declaración de Endpoints del Módulo de Personal
-Estas son las rutas declaradas en `web.php` para el control de los operadores y la respuesta de los botones de los correos electrónicos:
+### 3.3. Endpoints del Módulo de Personal
+Rutas declaradas para la gestión de operadores y la interceptación de respuestas del correo electrónico:
 
 ```php
 Route::get('/personal', function () {
@@ -86,17 +83,17 @@ Route::get('/aprobar-cuenta/{token}', [EmpleadoController::class, 'aprobar'])->n
 Route::get('/rechazar-cuenta/{token}', [EmpleadoController::class, 'rechazar'])->name('cuenta.rechazar');
 ```
 
-<br>
+---
 
-## 4. Arquitectura de Código y Reglas de Negocio (`EmpleadoController`)
+## 4. Arquitectura de Código y Reglas de Negocio
 
-La lógica y el control de los accesos están gobernados por la clase `EmpleadoController.php`.
+La lógica de persistencia y el control de acceso se centralizan en la clase `EmpleadoController.php`.
 
 ### 4.1. Registro y Envío de Solicitud (`store`)
-Para evitar que queden cuentas rotas si ocurre un fallo de red durante el envío del correo, el registro se ejecuta dentro de una transacción de base de datos (`DB::beginTransaction()`).
+Para preservar la integridad de la base de datos ante posibles interrupciones del servicio SMTP, el registro se encapsula en una transacción (`DB::beginTransaction()`).
 
 ```php
-public function store(Request $request){
+public function store(Request $request) {
     $request->validate([
         'nombre' => 'required|min:3',
         'email' => 'required|email|unique:users,email',
@@ -130,13 +127,18 @@ public function store(Request $request){
     }
 }
 ```
-**Funcionamiento:** Se validan los datos mínimos del formulario. El sistema genera una cadena aleatoria de 60 caracteres mediante `Str::random(60)` para usarla como token de verificación. El registro se guarda con el campo `status` en `'pendiente'` de forma predeterminada y se intenta enviar el correo. Si el correo se envía correctamente, se confirman los cambios con `DB::commit()`. De lo contrario, se dispara un `DB::rollBack()` para limpiar el registro fallido de la base de datos de inmediato.
+**Flujo de ejecución:**
+1. Validación estricta de las entradas del formulario.
+2. Generación criptográfica de un token de 60 caracteres (`Str::random(60)`).
+3. Persistencia del modelo `User` asginando el estado inicial `'pendiente'`.
+4. Disparo del servicio `Mail` hacia la cuenta administrativa.
+5. Si el envío es exitoso, se ejecuta `DB::commit()`. Ante cualquier excepción, `DB::rollBack()` purga la transacción para evitar cuentas huérfanas.
 
 ### 4.2. Eliminación de Cuentas por ID (`eliminarPorId`)
-Permite remover la fila de un usuario activo de manera directa utilizando su número identificador.
+Permite remover registros activos mediante su identificador primario.
 
 ```php
-public function eliminarPorId($id){
+public function eliminarPorId($id) {
     $usuario = User::findOrFail($id);
     $nombre = $usuario->name;
     $usuario->delete();
@@ -144,13 +146,14 @@ public function eliminarPorId($id){
     return redirect()->back()->with('success', 'Has eliminado la cuenta de '.$nombre.' exitosamente.');
 }
 ```
-**Funcionamiento:** El método busca al usuario mediante `User::findOrFail($id)`. Si el identificador no existe en la base de datos, Laravel detiene el proceso mostrando una pantalla de error 404. Si existe, extrae el nombre del registro para el mensaje de confirmación y lo purga de la tabla usando el comando `delete()`.
+**Flujo de ejecución:** 
+Ejecuta `User::findOrFail($id)`. Si el registro es inexistente, arroja un error 404. Si es localizado, extrae el nombre para la retroalimentación visual y destruye la entidad en la base de datos mediante el método `delete()`.
 
 ### 4.3. Validación y Activación de Accesos (`aprobar`)
-Este método se ejecuta al presionar el botón de activación en el correo del administrador. Quita las restricciones del usuario para permitirle iniciar sesión.
+Invocado al consumir el token de validación. Remueve las restricciones del modelo para habilitar la autenticación.
 
 ```php
-public function aprobar($token){
+public function aprobar($token) {
     $tokenLimpio = trim($token);
     
     $usuario = User::where('confirmation_token', $tokenLimpio)->first();
@@ -168,13 +171,17 @@ public function aprobar($token){
     return redirect('/personal')->with('success', '¡Has aprobado la cuenta de '.$usuario->name.' con éxito!');
 }
 ```
-**Funcionamiento:** Limpia los espacios vacíos del token con `trim()` y busca la coincidencia en la tabla de usuarios. Si el token no existe (porque está mal o ya se usó antes), redirige al administrador mostrando un error. Si lo encuentra, actualiza el estado del cajero a `'activo'`, borra la llave de `confirmation_token` escribiéndole `null` para invalidar el link, y registra la fecha de validación en `email_verified_at`.
+**Flujo de ejecución:**
+1. Saneamiento del string de entrada con `trim()`.
+2. Búsqueda del registro condicionado al `confirmation_token`.
+3. Si el token es caduco o nulo, se interrumpe la ejecución con una redirección de error.
+4. Si es válido, se muta el `status` a `'activo'`, se invalida el token (`null`) y se estampa la marca de tiempo en `email_verified_at`.
 
 ### 4.4. Rechazo y Purga de Solicitudes (`rechazar`)
-Se dispara al presionar el botón rojo de cancelación desde el cuerpo del correo.
+Ejecutado al declinar una solicitud desde la notificación por correo.
 
 ```php
-public function rechazar($token){
+public function rechazar($token) {
     $tokenLimpio = trim($token);
     
     $usuario = User::where('confirmation_token', $tokenLimpio)->first();
@@ -188,4 +195,5 @@ public function rechazar($token){
     return redirect('/personal')->with('success', 'Has rechazado la solicitud.');
 }
 ```
-**Funcionamiento:** Filtra el token recibido y busca la solicitud pendiente. Si el registro no se encuentra, aborta y regresa a la pantalla de gestión. Si localiza la petición, ejecuta un comando `$usuario->delete()`, eliminando físicamente la fila para no acumular registros no autorizados en la base de datos.
+**Flujo de ejecución:**
+Filtra el parámetro y localiza la petición pendiente. En caso de acierto, invoca `$usuario->delete()`, eliminando físicamente el registro para evitar el almacenamiento de cuentas denegadas en el sistema.
