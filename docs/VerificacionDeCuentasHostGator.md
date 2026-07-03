@@ -23,8 +23,8 @@ MAIL_PORT=587
 MAIL_USERNAME="tu-correo@tu-dominio.com.mx"
 MAIL_PASSWORD="contraseña_segura_de_aplicacion"
 MAIL_ENCRYPTION=tls
-MAIL_FROM_ADDRESS="notificaciones@tu-dominio.com.mx"
-MAIL_FROM_NAME="BunnyKlin"
+MAIL_FROM_ADDRESS="xxxxxxxxxxxxs@tu-xxxxx.com.mx"
+MAIL_FROM_NAME="xxxxx"
 ```
 
 
@@ -36,14 +36,18 @@ La capa visual de las notificaciones utiliza el motor de plantillas Blade de Lar
 
 ### Diseño de Correo de Notificación (`aprobacion-cuenta.blade.php`)
 
-* **Ubicación del archivo:** `resources/views/emails/aprobacion-cuenta.blade.php`
-* **Contenido:** Despliega una tarjeta HTML limpia y profesional que muestra de forma ordenada los datos que el usuario ingresó en el formulario de registro:
-  * **Nombre:** `{{ $user->name }}`
-  * **Email:** `{{ $user->email }}`
-  * **Rol asignado:** `{{ $user->role }}`
-* **Botones de acción:** El diseño incluye dos botones de acción directa incrustados en el cuerpo del mensaje. Estos botones adjuntan el valor del `$token` único de control y apuntan a sus respectivas URLs de validación en el servidor:
-  * **Permitir (Activar):** Enlace en color verde hacia la ruta `cuenta.aprobar` para dar de alta al empleado.
-  * **Cancelar (Eliminar):** Enlace en color rojo hacia la ruta `cuenta.rechazar` para descartar el registro.
+**Ubicación del archivo:** `resources/views/emails/aprobacion-cuenta.blade.php`
+
+**Contenido:** 
+Despliega una tarjeta HTML limpia y profesional que muestra de forma ordenada los datos que el usuario ingresó en el formulario de registro:
+* **Nombre:** `{{ $user->name }}`
+* **Email:** `{{ $user->email }}`
+* **Rol asignado:** `{{ $user->role }}`
+
+**Botones de acción:** 
+El diseño incluye dos botones de acción directa incrustados en el cuerpo del mensaje. Estos botones adjuntan el valor del `$token` único de control y apuntan a sus respectivas URLs de validación en el servidor:
+* **Permitir (Activar):** Enlace en color verde hacia la ruta `cuenta.aprobar` para dar de alta al empleado.
+* **Cancelar (Eliminar):** Enlace en color rojo hacia la ruta `cuenta.rechazar` para descartar el registro.
 
 <br>
 
@@ -55,8 +59,9 @@ Las URLs encargadas de alterar los estados de los usuarios en el backend están 
 Todas las rutas de administración están encapsuladas dentro del grupo afectado por el middleware `auth`. Si quien invoca la URL no posee una sesión válida e iniciada en el Punto de Venta, la petición es rechazada de inmediato.
 
 ### 3.2. Filtro de Rol Operativo (`AdminMiddleware`)
-* **Ubicación del archivo:** `app/Http/Middleware/AdminMiddleware.php`
-* **Lógica del Filtro:** Antes de ceder el control, el código evalúa si el usuario en sesión cuenta con el rol de administración:
+**Ubicación del archivo:** `app/Http/Middleware/AdminMiddleware.php`
+
+**Lógica del Filtro:** Antes de ceder el control, el código evalúa si el usuario en sesión cuenta con el rol de administración:
 
 ```php
 if (!auth()->check() || !auth()->user()->isAdmin()) {
@@ -125,7 +130,7 @@ public function store(Request $request){
     }
 }
 ```
-* **Funcionamiento:** Se validan los datos mínimos del formulario. El sistema genera una cadena aleatoria de 60 caracteres mediante `Str::random(60)` para usarla como token de verificación. El registro se guarda con el campo `status` en `'pendiente'` de forma predeterminada y se intenta enviar el correo. Si el correo se envía correctamente, se confirman los cambios con `DB::commit()`. De lo contrario, se dispara un `DB::rollBack()` para limpiar el registro fallido de la base de datos de inmediato.
+**Funcionamiento:** Se validan los datos mínimos del formulario. El sistema genera una cadena aleatoria de 60 caracteres mediante `Str::random(60)` para usarla como token de verificación. El registro se guarda con el campo `status` en `'pendiente'` de forma predeterminada y se intenta enviar el correo. Si el correo se envía correctamente, se confirman los cambios con `DB::commit()`. De lo contrario, se dispara un `DB::rollBack()` para limpiar el registro fallido de la base de datos de inmediato.
 
 ### 4.2. Eliminación de Cuentas por ID (`eliminarPorId`)
 Permite remover la fila de un usuario activo de manera directa utilizando su número identificador.
@@ -139,7 +144,7 @@ public function eliminarPorId($id){
     return redirect()->back()->with('success', 'Has eliminado la cuenta de '.$nombre.' exitosamente.');
 }
 ```
-* **Funcionamiento:** El método busca al usuario mediante `User::findOrFail($id)`. Si el identificador no existe en la base de datos, Laravel detiene el proceso mostrando una pantalla de error 404. Si existe, extrae el nombre del registro para el mensaje de confirmación y lo purga de la tabla usando el comando `delete()`.
+**Funcionamiento:** El método busca al usuario mediante `User::findOrFail($id)`. Si el identificador no existe en la base de datos, Laravel detiene el proceso mostrando una pantalla de error 404. Si existe, extrae el nombre del registro para el mensaje de confirmación y lo purga de la tabla usando el comando `delete()`.
 
 ### 4.3. Validación y Activación de Accesos (`aprobar`)
 Este método se ejecuta al presionar el botón de activación en el correo del administrador. Quita las restricciones del usuario para permitirle iniciar sesión.
@@ -163,7 +168,7 @@ public function aprobar($token){
     return redirect('/personal')->with('success', '¡Has aprobado la cuenta de '.$usuario->name.' con éxito!');
 }
 ```
-* **Funcionamiento:** Limpia los espacios vacíos del token con `trim()` y busca la coincidencia en la tabla de usuarios. Si el token no existe (porque está mal o ya se usó antes), redirige al administrador mostrando un error. Si lo encuentra, actualiza el estado del cajero a `'activo'`, borra la llave de `confirmation_token` escribiéndole `null` para invalidar el link, y registra la fecha de validación en `email_verified_at`.
+**Funcionamiento:** Limpia los espacios vacíos del token con `trim()` y busca la coincidencia en la tabla de usuarios. Si el token no existe (porque está mal o ya se usó antes), redirige al administrador mostrando un error. Si lo encuentra, actualiza el estado del cajero a `'activo'`, borra la llave de `confirmation_token` escribiéndole `null` para invalidar el link, y registra la fecha de validación en `email_verified_at`.
 
 ### 4.4. Rechazo y Purga de Solicitudes (`rechazar`)
 Se dispara al presionar el botón rojo de cancelación desde el cuerpo del correo.
@@ -183,4 +188,4 @@ public function rechazar($token){
     return redirect('/personal')->with('success', 'Has rechazado la solicitud.');
 }
 ```
-* **Funcionamiento:** Filtra el token recibido y busca la solicitud pendiente. Si el registro no se encuentra, aborta y regresa a la pantalla de gestión. Si localiza la petición, ejecuta un comando `$usuario->delete()`, eliminando físicamente la fila para no acumular registros no autorizados en la base de datos.
+**Funcionamiento:** Filtra el token recibido y busca la solicitud pendiente. Si el registro no se encuentra, aborta y regresa a la pantalla de gestión. Si localiza la petición, ejecuta un comando `$usuario->delete()`, eliminando físicamente la fila para no acumular registros no autorizados en la base de datos.
