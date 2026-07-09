@@ -125,9 +125,9 @@ document.addEventListener("alpine:init", () => {
                         fecha: `${dia}/${mes}/${anio}, ${hora}:${minutos}`,
                         total: parseFloat(venta.total),
                         items: venta.items || [],
-                        
-                        // 🔥 AQUÍ ESTÁ LA LÍNEA MÁGICA: Mapeamos el nombre del vendedor 
-                        nombre_vendedor: venta.nombre_vendedor || 'Desconocido',
+
+                        // 🔥 AQUÍ ESTÁ LA LÍNEA MÁGICA: Mapeamos el nombre del vendedor
+                        nombre_vendedor: venta.nombre_vendedor || "Desconocido",
                     };
                 });
             } catch (error) {
